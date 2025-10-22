@@ -20,7 +20,7 @@ class User(db.Model):
         return f"<User {self.username}>"
 
     def set_password(self, password):
-        self.password=generate_password_hash(password)
+        self.password = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password, password)

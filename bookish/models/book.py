@@ -1,11 +1,13 @@
 from bookish.app import db
+from bookish.models.book_authors import BookAuthors
+
 
 class Book(db.Model):
     __tablename__ = 'Books'
 
     ISBN = db.Column(db.String(), primary_key=True)
     title=db.Column(db.String())
-    authors=db.Column(db.String())
+    authors = db.relationship('Author', secondary=BookAuthors, back_populates='books')
     copies_owned=db.Column(db.Integer())
 
     def __init__(self, ISBN, title, authors, copies_owned):
