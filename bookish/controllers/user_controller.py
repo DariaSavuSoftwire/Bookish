@@ -1,7 +1,10 @@
+import datetime
+
 from flask import request, jsonify
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from bookish.models.user import User
-from bookish.models import db
+from bookish.models import db, Book, BookLoan
+
 
 def user_routes(app):
     @app.route('/user/healthcheck')
@@ -31,7 +34,7 @@ def user_routes(app):
     def login():
         username = request.json.get('username')
         password = request.json.get('password')
-        user=User.query.filter_by(username=username).first()
+        user = User.query.filter_by(username=username).first()
 
         if not user:
             return jsonify({"msg": "Username is invalid"}), 400
@@ -41,4 +44,36 @@ def user_routes(app):
 
         token = create_access_token(identity=user.username)
         return jsonify({"msg": "User logged in successfully", "token": token}), 201
-        return jsonify({"msg": str(e)}), 500
+
+    @app.route('/user/loan', methods=['POST'])
+    @jwt_required()
+    def loan():
+        username = get_jwt_identity()
+        ISBN = request.json.get('ISBN')
+        duration = request.json.get('duration')
+
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({"msg": "Authentication has expired "}), 400
+
+        book = Book.query.filter_by(ISBN=ISBN).first()
+        if not book:
+            return jsonify({"msg": "Book does not exist"}), 400
+
+        borrowed_on = datetime.datetime.now()
+        due_return = borrowed_on + datetime.timedelta(days=int(duration))
+        book_loan = BookLoan(ISBN=ISBN, username=username, borrowed_on=borrowed_on.strftime("%Y-%m-%d"),
+                             due_return=due_return.strftime("%Y-%m-%d"))
+        try:
+            db.session.add(book_loan)
+            db.session.commit()
+            return jsonify({"msg": "Book loan created successfully"}), 201
+        except Exception as e:
+            return jsonify({"msg": str(e)}), 500
+
+    @app.route('/user/getLoanedBooks', methods=['GET'])
+    @jwt_required()
+    def get_loaned_books():
+        username = get_jwt_identity()
+        loaned_books = BookLoan.query.filter_by(username=username).all()
+        return jsonify({"loaned_books": [loan.serialize() for loan in loaned_books]}), 200

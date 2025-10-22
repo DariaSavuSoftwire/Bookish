@@ -1,21 +1,19 @@
-from bookish.models import db
-from bookish.models.book_authors import BookAuthors
-
+from bookish.db_setup import db
 
 class Author(db.Model):
     __tablename__ = 'Authors'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String())
-    books = db.relationship('Book', secondary=BookAuthors, back_populates='authors')
+    book_authors = db.relationship('BookAuthors', back_populates='author')
 
     def __init__(self, name):
         self.name = name
 
     def __repr__(self):
-        return f"<Author {self.name}>"
+        return f"<Authors: ${self.name}>"
 
     def serialize(self):
         return {
-            'name': self.name,
+            'name': self.name
         }

@@ -1,5 +1,7 @@
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from bookish.db_setup import db
 
-db = SQLAlchemy()
-migrate = Migrate(db)
+from .book import Book
+from .author import Author
+from .book_authors import BookAuthors
+from .book_loan import BookLoan
+from .user import User
