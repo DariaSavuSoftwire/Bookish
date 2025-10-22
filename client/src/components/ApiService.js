@@ -1,7 +1,7 @@
 export class ApiService {
   healthCheck() {
     return new Promise((resolve) =>
-      fetch("/healthcheck", {
+      fetch("http://127.0.0.1:5000/user/healthcheck", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

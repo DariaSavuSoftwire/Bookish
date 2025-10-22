@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Container } from "reactstrap";
-import { HomePage } from "./HomePage/HomePage";
+import { HomePage } from "./homePage/HomePage";
 import { ApiService } from "./ApiService";
 
 export default function App() {

@@ -4,7 +4,7 @@ from bookish.app import db
 class BookLoan(db.Model):
     __tablename__ = 'BookLoans'
 
-    id = db.Column(db.Integer, db.Sequence('loans'), primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(), db.ForeignKey('users.username'))
     ISBN = db.Column(db.String(), db.ForeignKey('books.ISBN'))
     borrowed_on = db.Column(db.String())
