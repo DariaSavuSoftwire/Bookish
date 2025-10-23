@@ -8,7 +8,7 @@ def author_routes(app):
     @app.route('/author/get_all', methods=['GET'])
     @jwt_required()
     def get_all_authors():
-        return {"books": Author.query.all()}
+        return {"books": Author.query.all()}, 200
 
     @app.route('/author/add', methods=['POST'])
     @jwt_required()
