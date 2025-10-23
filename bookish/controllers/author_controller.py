@@ -5,7 +5,7 @@ from bookish.models import db
 
 def author_routes(app):
 
-    @app.route('/author/getAll', methods=['GET'])
+    @app.route('/author/get_all', methods=['GET'])
     @jwt_required()
     def get_all_books():
         return {"books": Author.query.all()}

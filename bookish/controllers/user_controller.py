@@ -20,15 +20,17 @@ def user_routes(app):
         if User.query.filter_by(username=username).first():
             return jsonify({"msg": "Username already exists"}), 400
 
+        new_user = User(username, name)
+        new_user.set_password(password)
+
         try:
-            new_user = User(username, name)
-            new_user.set_password(password)
             db.session.add(new_user)
             db.session.commit()
             token = create_access_token(identity=new_user.username)
             return jsonify({"msg": "User created successfully", "token": token}), 201
         except Exception as e:
             return jsonify({"msg": str(e)}), 500
+
 
     @app.route('/user/login', methods=['POST'])
     def login():
@@ -44,6 +46,7 @@ def user_routes(app):
 
         token = create_access_token(identity=user.username)
         return jsonify({"msg": "User logged in successfully", "token": token}), 201
+
 
     @app.route('/user/loan', methods=['POST'])
     @jwt_required()
@@ -71,9 +74,9 @@ def user_routes(app):
         except Exception as e:
             return jsonify({"msg": str(e)}), 500
 
-    @app.route('/user/getLoanedBooks', methods=['GET'])
+    @app.route('/user/get_loaned_books', methods=['GET'])
     @jwt_required()
     def get_loaned_books():
         username = get_jwt_identity()
         loaned_books = BookLoan.query.filter_by(username=username).all()
-        return jsonify({"loaned_books": [loan.serialize() for loan in loaned_books]}), 200
+        return jsonify({"loaned_books": [loaned_book.serialize() for loaned_book in loaned_books]}), 200

@@ -1,6 +1,7 @@
 from sqlalchemy.sql.util import join_condition
 
-from bookish.models import db, Author, BookAuthors
+from bookish.models import db, Author, BookAuthors, BookLoan
+from bookish.models.available_book_dto import AvailableBookDTO
 from bookish.models.book import Book
 from bookish.models import db
 from flask import Flask, jsonify, request
@@ -9,10 +10,10 @@ from bookish.models.book import Book
 
 
 def book_routes(app):
-    @app.route('/book/getAll', methods=['GET'])
+    @app.route('/book/get_all', methods=['GET'])
     @jwt_required()
     def get_all_books():
-        sorted_books=Book.query.order_by(Book.title).all()
+        sorted_books = Book.query.order_by(Book.title).all()
         return jsonify({"books": [book.serialize() for book in sorted_books]}), 201
 
     @app.route('/book/create', methods=['POST'])
@@ -57,3 +58,22 @@ def book_routes(app):
         title = request.json.get('title')
         books = Book.query.filter(title in Book.title)
         return jsonify({"books": books}), 200
+
+    @app.route('/book/get_available_books', methods=['GET'])
+    @jwt_required()
+    def get_available_books():
+        books = Book.query.all()
+        available_books = []
+        for book in books:
+            borrowed_copies = BookLoan.query.filter_by(ISBN=book.ISBN).order_by(BookLoan.due_return.asc()).all()
+            available_copies = book.copies_owned - len(borrowed_copies)
+            next_return = borrowed_copies[0] if borrowed_copies else None
+            available_book = AvailableBookDTO(book.title, book.ISBN, book.authors, available_copies, book.copies_owned)
+
+            if next_return:
+                available_book.set_return_date(next_return.due_return)
+                available_book.set_user_to_return(next_return.username)
+
+            available_books.append(available_book)
+
+        return jsonify({"available_books": [available_book.serialize() for available_book in available_books]}), 200
