@@ -1,15 +1,38 @@
 import datetime
 
 from flask import request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from bookish.models.user import User
 from bookish.models import db, Book, BookLoan
+from bookish.models.user_role import Role
 
 
 def user_routes(app):
     @app.route('/user/healthcheck')
     def health_check_user():
         return {"status": "OK"}
+
+    @app.route('/user/add_user')
+    @jwt_required()
+    def add_user():
+        user_role = get_jwt().get('role')
+        if (user_role != 'ADMIN'):
+            return jsonify({"msg": "You are not authorized to perform this action"}), 401
+
+        username = request.json.get('username')
+        name = request.json.get('name')
+        password = request.json.get('password')
+        role = request.json.get('role')
+        user = User(username, name)
+        user.set_password(password)
+        user.set_role(role)
+
+        try:
+            db.session.add(user)
+            db.session.commit()
+            return jsonify({"msg": "User added successfully"}), 200
+        except Exception as e:
+            return jsonify({"msg": str(e)}), 500
 
     @app.route('/user/register', methods=['POST'])
     def register():
@@ -22,15 +45,16 @@ def user_routes(app):
 
         new_user = User(username, name)
         new_user.set_password(password)
+        new_user.set_role(Role.USER)
 
         try:
             db.session.add(new_user)
             db.session.commit()
-            token = create_access_token(identity=new_user.username)
+            role_claim = {"role": "USER"}
+            token = create_access_token(identity=new_user.username, additional_claims=role_claim)
             return jsonify({"msg": "User created successfully", "token": token}), 201
         except Exception as e:
             return jsonify({"msg": str(e)}), 500
-
 
     @app.route('/user/login', methods=['POST'])
     def login():
@@ -44,9 +68,8 @@ def user_routes(app):
         if not user.check_password(password):
             return jsonify({"msg": "Incorrect password"}), 400
 
-        token = create_access_token(identity=user.username)
+        token = create_access_token(identity=user.username, additional_claims={"role": user.role.name})
         return jsonify({"msg": "User logged in successfully", "token": token}), 201
-
 
     @app.route('/user/loan', methods=['POST'])
     @jwt_required()
