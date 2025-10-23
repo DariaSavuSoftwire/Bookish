@@ -4,7 +4,6 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from bookish.db_setup import db, migrate
 from bookish.controllers import register_controllers
-from bookish.models import User
 
 jwt = JWTManager()
 

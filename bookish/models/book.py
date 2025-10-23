@@ -1,6 +1,4 @@
 from bookish.db_setup import db
-from bookish.models.book_authors import BookAuthors
-
 
 class Book(db.Model):
     __tablename__ = 'Books'

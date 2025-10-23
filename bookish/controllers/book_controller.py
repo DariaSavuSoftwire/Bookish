@@ -1,11 +1,8 @@
-from sqlalchemy.sql.util import join_condition
-
-from bookish.models import db, Author, BookAuthors, BookLoan
+from bookish.models import Author, BookAuthors, BookLoan
 from bookish.models.available_book_dto import AvailableBookDTO
-from bookish.models.book import Book
 from bookish.models import db
-from flask import Flask, jsonify, request
-from flask_jwt_extended import jwt_required,get_jwt
+from flask import jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt
 from bookish.models.book import Book
 
 
@@ -19,8 +16,8 @@ def book_routes(app):
     @app.route('/book/create', methods=['POST'])
     @jwt_required()
     def add_book():
-        authenticated_user=get_jwt()
-        user_role=authenticated_user.get('role')
+        authenticated_user = get_jwt()
+        user_role = authenticated_user.get('role')
         print(user_role)
 
         if user_role != 'ADMIN':

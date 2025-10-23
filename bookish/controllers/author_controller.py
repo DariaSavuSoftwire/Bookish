@@ -1,10 +1,10 @@
-from flask import request, jsonify
+from flask import request
 from flask_jwt_extended import jwt_required
 from bookish.models import Author
 from bookish.models import db
 
-def author_routes(app):
 
+def author_routes(app):
     @app.route('/author/get_all', methods=['GET'])
     @jwt_required()
     def get_all_books():
@@ -13,7 +13,7 @@ def author_routes(app):
     @app.route('/author/add', methods=['POST'])
     @jwt_required()
     def add_author():
-        name=request.json.get('name')
+        name = request.json.get('name')
 
         if Author.query.filter_by(name=name).first():
             return {"message": "Author already exists"}
