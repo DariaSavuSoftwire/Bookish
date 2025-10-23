@@ -1,12 +1,12 @@
-from bookish.app import db
+from bookish.db_setup import db
 
 
 class BookLoan(db.Model):
     __tablename__ = 'BookLoans'
 
-    id = db.Column(db.Integer, db.Sequence('loans'), primary_key=True)
-    username = db.Column(db.String(), db.ForeignKey('users.username'))
-    ISBN = db.Column(db.String(), db.ForeignKey('books.ISBN'))
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(), db.ForeignKey('Users.username'))
+    ISBN = db.Column(db.String(), db.ForeignKey('Books.ISBN'))
     borrowed_on = db.Column(db.String())
     due_return = db.Column(db.String())
 
@@ -24,7 +24,7 @@ class BookLoan(db.Model):
 
     def serialize(self):
         return {
-            'ISBN': self.ISBN,
+            'book': self.book.serialize(),
             'username': self.username,
             'borrowed_on': self.borrowed_on,
             'due_return': self.due_return

@@ -1,0 +1,91 @@
+from bookish.models import Author, BookAuthors, BookLoan, book
+from bookish.models.available_book_dto import AvailableBookDTO
+from bookish.models import db
+from flask import jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt
+from bookish.models.book import Book
+
+
+def book_routes(app):
+    @app.route('/book/get_all', methods=['GET'])
+    @jwt_required()
+    def get_all_books():
+        sorted_books = Book.query.order_by(Book.title).all()
+        return jsonify({"books": [book.serialize() for book in sorted_books]}), 200
+
+    @app.route('/book/create', methods=['POST'])
+    @jwt_required()
+    def add_book():
+        authenticated_user = get_jwt()
+        user_role = authenticated_user.get('role')
+
+        if user_role != 'ADMIN':
+            return jsonify({"message": "You are not authorized to perform this action"}), 403
+
+        isbn = request.json.get('ISBN')
+        title = request.json.get('title')
+        author_names = request.json.get('authors', [])
+        copies_owned = request.json.get('copies_owned', 0)
+
+        if Book.query.filter_by(ISBN=isbn).first():
+            return jsonify({"message": "Book already exists"}), 409
+        try:
+            new_book = Book(isbn, title, copies_owned)
+            db.session.add(new_book)
+            db.session.commit()
+            for author_name in author_names:
+                author = Author.query.filter_by(name=author_name).first()
+                if not author:
+                    author = Author(name=author_name)
+                    db.session.add(author)
+                    db.session.commit()
+
+                book_author = BookAuthors(ISBN=new_book.ISBN, author_id=author.id)
+                db.session.add(book_author)
+            db.session.commit()
+
+            return jsonify({"message": "Book created successfully"}), 201
+        except Exception as e:
+            return jsonify({"message": str(e)}), 500
+
+    @app.route('/book/filter', methods=['GET'])
+    @jwt_required()
+    def filter_books():
+        author = request.args.get('author')
+        title = request.args.get('title')
+        query = Book.query
+
+        if author:
+            query = query.join(BookAuthors).join(Author).filter(Author.name.ilike(f"%{author}%"))
+
+        if title:
+            query = query.filter(Book.title.ilike(f"%{title}%"))
+
+        books = query.all()
+        return jsonify({"books": [filtered_book.serialize() for filtered_book in books]}), 200
+
+    @app.route('/book/filter_title', methods=['GET'])
+    @jwt_required()
+    def filter_title():
+        title = request.json.get('title')
+        books = Book.query.filter(title in Book.title)
+        return jsonify({"books": books}), 200
+
+    @app.route('/book/get_available_books', methods=['GET'])
+    @jwt_required()
+    def get_available_books():
+        books = Book.query.all()
+        available_books = []
+        for book in books:
+            borrowed_copies = BookLoan.query.filter_by(ISBN=book.ISBN).order_by(BookLoan.due_return.asc()).all()
+            available_copies = book.copies_owned - len(borrowed_copies)
+            next_return = borrowed_copies[0] if borrowed_copies else None
+            available_book = AvailableBookDTO(book.title, book.ISBN, book.authors, available_copies, book.copies_owned)
+
+            if next_return:
+                available_book.set_return_date(next_return.due_return)
+                available_book.set_user_to_return(next_return.username)
+
+            available_books.append(available_book)
+
+        return jsonify({"available_books": [available_book.serialize() for available_book in available_books]}), 200
