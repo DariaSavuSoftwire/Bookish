@@ -21,10 +21,8 @@ def create_app():
 
     jwt.init_app(app)
     CORS(app)
-    print()
 
     if __name__ == "__main__":
         app.run()
-
 
     return app

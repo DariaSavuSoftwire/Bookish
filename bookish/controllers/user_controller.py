@@ -8,16 +8,12 @@ from bookish.models.user_role import Role
 
 
 def user_routes(app):
-    @app.route('/user/healthcheck')
-    def health_check_user():
-        return {"status": "OK"}
-
     @app.route('/user/add_user')
     @jwt_required()
     def add_user():
         user_role = get_jwt().get('role')
-        if (user_role != 'ADMIN'):
-            return jsonify({"msg": "You are not authorized to perform this action"}), 401
+        if user_role != 'ADMIN':
+            return jsonify({"message": "You are not authorized to perform this action"}), 403
 
         username = request.json.get('username')
         name = request.json.get('name')
@@ -30,9 +26,9 @@ def user_routes(app):
         try:
             db.session.add(user)
             db.session.commit()
-            return jsonify({"msg": "User added successfully"}), 200
+            return jsonify({"message": "User added successfully"}), 201
         except Exception as e:
-            return jsonify({"msg": str(e)}), 500
+            return jsonify({"message": str(e)}), 500
 
     @app.route('/user/register', methods=['POST'])
     def register():
@@ -41,7 +37,7 @@ def user_routes(app):
         password = request.json.get('password')
 
         if User.query.filter_by(username=username).first():
-            return jsonify({"msg": "Username already exists"}), 400
+            return jsonify({"message": "Username already exists"}), 409
 
         new_user = User(username, name)
         new_user.set_password(password)
@@ -52,9 +48,9 @@ def user_routes(app):
             db.session.commit()
             role_claim = {"role": "USER"}
             token = create_access_token(identity=new_user.username, additional_claims=role_claim)
-            return jsonify({"msg": "User created successfully", "token": token}), 201
+            return jsonify({"message": "User created successfully", "token": token}), 201
         except Exception as e:
-            return jsonify({"msg": str(e)}), 500
+            return jsonify({"message": str(e)}), 500
 
     @app.route('/user/login', methods=['POST'])
     def login():
@@ -62,14 +58,11 @@ def user_routes(app):
         password = request.json.get('password')
         user = User.query.filter_by(username=username).first()
 
-        if not user:
-            return jsonify({"msg": "Username is invalid"}), 400
-
-        if not user.check_password(password):
-            return jsonify({"msg": "Incorrect password"}), 400
+        if not user or not user.check_password(password):
+            return jsonify({"message": "Username or password is incorrect"}), 400
 
         token = create_access_token(identity=user.username, additional_claims={"role": user.role.name})
-        return jsonify({"msg": "User logged in successfully", "token": token}), 201
+        return jsonify({"message": "User logged in successfully", "token": token}), 201
 
     @app.route('/user/loan', methods=['POST'])
     @jwt_required()
@@ -80,11 +73,11 @@ def user_routes(app):
 
         user = User.query.filter_by(username=username).first()
         if not user:
-            return jsonify({"msg": "Authentication has expired "}), 400
+            return jsonify({"message": "Authentication has expired "}), 401
 
         book = Book.query.filter_by(ISBN=ISBN).first()
         if not book:
-            return jsonify({"msg": "Book does not exist"}), 400
+            return jsonify({"message": "Book does not exist"}), 400
 
         borrowed_on = datetime.datetime.now()
         due_return = borrowed_on + datetime.timedelta(days=int(duration))
@@ -93,9 +86,9 @@ def user_routes(app):
         try:
             db.session.add(book_loan)
             db.session.commit()
-            return jsonify({"msg": "Book loan created successfully"}), 201
+            return jsonify({"message": "Book loan created successfully"}), 201
         except Exception as e:
-            return jsonify({"msg": str(e)}), 500
+            return jsonify({"message": str(e)}), 500
 
     @app.route('/user/get_loaned_books', methods=['GET'])
     @jwt_required()

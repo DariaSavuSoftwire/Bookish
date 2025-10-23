@@ -1,4 +1,4 @@
-from bookish.models import Author, BookAuthors, BookLoan
+from bookish.models import Author, BookAuthors, BookLoan, book
 from bookish.models.available_book_dto import AvailableBookDTO
 from bookish.models import db
 from flask import jsonify, request
@@ -11,17 +11,16 @@ def book_routes(app):
     @jwt_required()
     def get_all_books():
         sorted_books = Book.query.order_by(Book.title).all()
-        return jsonify({"books": [book.serialize() for book in sorted_books]}), 201
+        return jsonify({"books": [book.serialize() for book in sorted_books]}), 200
 
     @app.route('/book/create', methods=['POST'])
     @jwt_required()
     def add_book():
         authenticated_user = get_jwt()
         user_role = authenticated_user.get('role')
-        print(user_role)
 
         if user_role != 'ADMIN':
-            return jsonify({"msg": "You are not authorized to perform this action"}), 401
+            return jsonify({"message": "You are not authorized to perform this action"}), 403
 
         isbn = request.json.get('ISBN')
         title = request.json.get('title')
@@ -29,7 +28,7 @@ def book_routes(app):
         copies_owned = request.json.get('copies_owned', 0)
 
         if Book.query.filter_by(ISBN=isbn).first():
-            return jsonify({"message": "Book already exists"}), 400
+            return jsonify({"message": "Book already exists"}), 409
         try:
             new_book = Book(isbn, title, copies_owned)
             db.session.add(new_book)
@@ -47,14 +46,23 @@ def book_routes(app):
 
             return jsonify({"message": "Book created successfully"}), 201
         except Exception as e:
-            return jsonify({"message": str(e)}), 400
+            return jsonify({"message": str(e)}), 500
 
-    @app.route('/book/filter_author', methods=['GET'])
+    @app.route('/book/filter', methods=['GET'])
     @jwt_required()
-    def filter_author():
-        author = request.json.get('author')
-        books = Book.query.filter(author in Book.authors)
-        return jsonify({"books": books}), 200
+    def filter_books():
+        author = request.args.get('author')
+        title = request.args.get('title')
+        query = Book.query
+
+        if author:
+            query = query.join(BookAuthors).join(Author).filter(Author.name.ilike(f"%{author}%"))
+
+        if title:
+            query = query.filter(Book.title.ilike(f"%{title}%"))
+
+        books = query.all()
+        return jsonify({"books": [filtered_book.serialize() for filtered_book in books]}), 200
 
     @app.route('/book/filter_title', methods=['GET'])
     @jwt_required()
