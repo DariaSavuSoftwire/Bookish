@@ -15,7 +15,7 @@ def book_routes(app):
         elements_per_page = request.args.get('elements_per_page', 10, type=int)
 
         if page < 1 or elements_per_page < 1:
-            return jsonify({"message": "Invalid request"}), 400
+            return jsonify({"message": "Both page and number of elements per page should be greater than 0"}), 400
 
         author = request.args.get('author')
         title = request.args.get('title')
@@ -27,14 +27,16 @@ def book_routes(app):
         if title:
             query = query.filter(Book.title.ilike(f"%{title}%"))
 
-        books = query.order_by(Book.title).paginate(page=page, per_page=elements_per_page + 1, error_out=False)
+        books = query.order_by(Book.title)
+        no_of_books = books.count()
+        paged_books = books.paginate(page=page, per_page=elements_per_page, error_out=False)
         return jsonify({
-            "books": [filtered_book.serialize() for filtered_book in books],
+            "books": [book.serialize() for book in paged_books],
             "metadata":
                 {
                     "page": page,
-                    "elements_per_page": elements_per_page + 1,
-                    "total_elements": books.total
+                    "elements_per_page": elements_per_page,
+                    "total_elements": no_of_books,
                 }
         }), 200
 
@@ -73,7 +75,8 @@ def book_routes(app):
             db.session.commit()
 
             return jsonify({"message": "Book created successfully"}), 201
-        except:
+        except Exception as e:
+            app.logger.error(e)
             return jsonify({"message": "Internal Server Error, please try again later"}), 500
 
     @app.route('/book/update', methods=['PUT'])
@@ -111,7 +114,8 @@ def book_routes(app):
 
             db.session.commit()
             return jsonify({"message": "Book updated successfully", "book": current_book.serialize()}), 201
-        except:
+        except Exception as e:
+            app.logger.error(e)
             return jsonify({"message": "Internal Server Error, please try again later"}), 500
 
     @app.route('/book/delete', methods=['DELETE'])
@@ -126,12 +130,15 @@ def book_routes(app):
             return jsonify({"message": "Invalid request"}), 400
 
         try:
+            book = Book.query.filter_by(ISBN=ISBN).first()
             book_authors = BookAuthors.query.filter_by(ISBN=ISBN).all()
-            db.session.delete(ba for ba in book_authors)
-            db.session.delete(Book.query.filter_by(ISBN=ISBN).first())
+            delete_book_authors(set(book_authors), book, db)
+            db.session.delete(book)
             db.session.commit()
             return jsonify({"message": "Book deleted successfully"}), 200
-        except:
+
+        except Exception as e:
+            app.logger.error(e)
             return jsonify({"message": "Internal Server Error, please try again later"}), 500
 
     @app.route('/book/get_available_books', methods=['GET'])
@@ -140,11 +147,13 @@ def book_routes(app):
         page = request.args.get('page', 1, type=int)
         elements_per_page = request.args.get('elements_per_page', 10, type=int)
         if page < 1 or elements_per_page < 1:
-            return jsonify({"message": "Invalid request"}), 400
+            return jsonify({"message": "Both page and number of elements per page should be greater than 0"}), 400
 
-        books = Book.query.order_by(Book.title).paginate(page=page, per_page=elements_per_page + 1, error_out=False)
+        books = Book.query.order_by(Book.title);
+        no_of_books = books.count()
+        paged_books = books.paginate(page=page, per_page=elements_per_page, error_out=False)
         available_books = []
-        for book in books:
+        for book in paged_books:
             borrowed_copies = BookLoan.query.filter_by(ISBN=book.ISBN).order_by(BookLoan.due_return.asc()).all()
             available_copies = book.copies_owned - len(borrowed_copies)
             next_return = borrowed_copies[0] if borrowed_copies else None
@@ -161,7 +170,7 @@ def book_routes(app):
             "metadata":
                 {
                     "page": page,
-                    "elements_per_page": elements_per_page + 1,
-                    "total_elements": len(available_books)
+                    "elements_per_page": elements_per_page,
+                    "total_elements": no_of_books
                 }
         }), 200

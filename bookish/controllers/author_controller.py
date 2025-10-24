@@ -5,7 +5,6 @@ from bookish.controllers.utils import verify_admin_user
 from bookish.models import Author
 from bookish.models import db
 
-
 def author_routes(app):
     @app.route('/author/get_all', methods=['GET'])
     @jwt_required()
@@ -29,4 +28,5 @@ def author_routes(app):
             db.session.commit()
             return jsonify({"message": "Author created"}), 201
         except Exception as e:
-            return jsonify({"message": str(e)}), 500
+            app.logger.error(e)
+            return jsonify({"message": "Internal Server Error, please try again later"}), 500
