@@ -1,5 +1,7 @@
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
+
+from bookish.controllers.utils import verify_admin_user
 from bookish.models import Author
 from bookish.models import db
 
@@ -13,9 +15,7 @@ def author_routes(app):
     @app.route('/author/add', methods=['POST'])
     @jwt_required()
     def add_author():
-        role = get_jwt().get('role')
-
-        if role != "ADMIN":
+        if not verify_admin_user(get_jwt()):
             return jsonify({"message": "You are not authorized to perform this action"}), 403
 
         name = request.json.get('name')

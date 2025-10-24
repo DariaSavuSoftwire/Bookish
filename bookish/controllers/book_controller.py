@@ -1,4 +1,4 @@
-from bookish.controllers.utils import delete_book_authors, add_book_authors
+from bookish.controllers.utils import delete_book_authors, add_book_authors, verify_admin_user
 from bookish.models import Author, BookAuthors, BookLoan, book
 from bookish.models.available_book_dto import AvailableBookDTO
 from bookish.models import db
@@ -13,27 +13,35 @@ def book_routes(app):
     def get_all_books():
         page = request.args.get('page', 1, type=int)
         elements_per_page = request.args.get('elements_per_page', 10, type=int)
+
         if page < 1 or elements_per_page < 1:
             return jsonify({"message": "Invalid request"}), 400
 
-        sorted_books = Book.query.order_by(Book.title).paginate(page=page, per_page=elements_per_page, error_out=False)
+        author = request.args.get('author')
+        title = request.args.get('title')
+        query = Book.query
+
+        if author:
+            query = query.join(BookAuthors).join(Author).filter(Author.name.ilike(f"%{author}%"))
+
+        if title:
+            query = query.filter(Book.title.ilike(f"%{title}%"))
+
+        books = query.order_by(Book.title).paginate(page=page, per_page=elements_per_page + 1, error_out=False)
         return jsonify({
-            "books": [book.serialize() for book in sorted_books],
+            "books": [filtered_book.serialize() for filtered_book in books],
             "metadata":
                 {
                     "page": page,
-                    "elements_per_page": elements_per_page,
-                    "total_elements": len(sorted_books)
+                    "elements_per_page": elements_per_page + 1,
+                    "total_elements": books.total
                 }
         }), 200
 
     @app.route('/book/create', methods=['POST'])
     @jwt_required()
     def add_book():
-        authenticated_user = get_jwt()
-        user_role = authenticated_user.get('role')
-
-        if user_role != 'ADMIN':
+        if not verify_admin_user(get_jwt()):
             return jsonify({"message": "You are not authorized to perform this action"}), 403
 
         isbn = request.json.get('ISBN')
@@ -71,10 +79,7 @@ def book_routes(app):
     @app.route('/book/update', methods=['PUT'])
     @jwt_required()
     def update_book():
-        authenticated_user = get_jwt()
-        user_role = authenticated_user.get('role')
-
-        if user_role != 'ADMIN':
+        if not verify_admin_user(get_jwt()):
             return jsonify({"message": "You are not authorized to perform this action"}), 403
 
         isbn = request.json.get('ISBN')
@@ -112,6 +117,9 @@ def book_routes(app):
     @app.route('/book/delete', methods=['DELETE'])
     @jwt_required()
     def delete_book():
+        if not verify_admin_user(get_jwt()):
+            return jsonify({"message": "You are not authorized to perform this action"}), 403
+
         ISBN = request.json.get('ISBN')
 
         if not ISBN:
@@ -126,36 +134,6 @@ def book_routes(app):
         except:
             return jsonify({"message": "Internal Server Error, please try again later"}), 500
 
-    @app.route('/book/filter', methods=['GET'])
-    @jwt_required()
-    def filter_books():
-        page = request.args.get('page', 1, type=int)
-        elements_per_page = request.args.get('elements_per_page', 10, type=int)
-
-        if page < 1 or elements_per_page < 1:
-            return jsonify({"message": "Invalid request"}), 400
-
-        author = request.args.get('author')
-        title = request.args.get('title')
-        query = Book.query
-
-        if author:
-            query = query.join(BookAuthors).join(Author).filter(Author.name.ilike(f"%{author}%"))
-
-        if title:
-            query = query.filter(Book.title.ilike(f"%{title}%"))
-
-        books = query.order_by(Book.title).paginate(page=page, per_page=elements_per_page, error_out=False)
-        return jsonify({
-            "books": [filtered_book.serialize() for filtered_book in books],
-            "metadata":
-                {
-                    "page": page,
-                    "elements_per_page": elements_per_page,
-                    "total_elements": books.total
-                }
-        }), 200
-
     @app.route('/book/get_available_books', methods=['GET'])
     @jwt_required()
     def get_available_books():
@@ -164,7 +142,7 @@ def book_routes(app):
         if page < 1 or elements_per_page < 1:
             return jsonify({"message": "Invalid request"}), 400
 
-        books = Book.query.order_by(Book.title).paginate(page=page, per_page=elements_per_page, error_out=False)
+        books = Book.query.order_by(Book.title).paginate(page=page, per_page=elements_per_page + 1, error_out=False)
         available_books = []
         for book in books:
             borrowed_copies = BookLoan.query.filter_by(ISBN=book.ISBN).order_by(BookLoan.due_return.asc()).all()
@@ -183,7 +161,7 @@ def book_routes(app):
             "metadata":
                 {
                     "page": page,
-                    "elements_per_page": elements_per_page,
+                    "elements_per_page": elements_per_page + 1,
                     "total_elements": len(available_books)
                 }
         }), 200

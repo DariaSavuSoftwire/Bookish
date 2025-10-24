@@ -20,3 +20,8 @@ def add_book_authors(authors_to_add, current_book, db):
             db.session.flush()
         book_author = BookAuthors(ISBN=current_book.ISBN, author_id=author.id)
         db.session.add(book_author)
+
+
+def verify_admin_user(authenticated_user):
+    user_role = authenticated_user.get('role')
+    return user_role == 'ADMIN'

@@ -2,6 +2,8 @@ import datetime
 
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
+
+from bookish.controllers.utils import verify_admin_user
 from bookish.models.user import User
 from bookish.models import db, Book, BookLoan
 from bookish.models.user_role import Role
@@ -11,8 +13,7 @@ def user_routes(app):
     @app.route('/user/add_user')
     @jwt_required()
     def add_user():
-        user_role = get_jwt().get('role')
-        if user_role != 'ADMIN':
+        if not verify_admin_user(get_jwt()):
             return jsonify({"message": "You are not authorized to perform this action"}), 403
 
         username = request.json.get('username')
