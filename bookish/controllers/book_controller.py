@@ -1,3 +1,4 @@
+from bookish.controllers.utils import delete_book_authors, add_book_authors, verify_admin_user
 from bookish.models import Author, BookAuthors, BookLoan, book
 from bookish.models.available_book_dto import AvailableBookDTO
 from bookish.models import db
@@ -11,24 +12,50 @@ def book_routes(app):
     @jwt_required()
     def get_all_books():
         page = request.args.get('page', 1, type=int)
-        elements_per_page = request.args.get('elements_per_page', 3, type=int)
-        offset = (page - 1) * elements_per_page
-        sorted_books = Book.query.order_by(Book.title).limit(elements_per_page).offset(offset).all()
-        return jsonify({"books": [book.serialize() for book in sorted_books]}), 200
+        elements_per_page = request.args.get('elements_per_page', 10, type=int)
+
+        if page < 1 or elements_per_page < 1:
+            return jsonify({"message": "Both page and number of elements per page should be greater than 0"}), 400
+
+        author = request.args.get('author')
+        title = request.args.get('title')
+        query = Book.query
+
+        if author:
+            query = query.join(BookAuthors).join(Author).filter(Author.name.ilike(f"%{author}%"))
+
+        if title:
+            query = query.filter(Book.title.ilike(f"%{title}%"))
+
+        books = query.order_by(Book.title)
+        no_of_books = books.count()
+        paged_books = books.paginate(page=page, per_page=elements_per_page, error_out=False)
+        return jsonify({
+            "books": [book.serialize() for book in paged_books],
+            "metadata":
+                {
+                    "page": page,
+                    "elements_per_page": elements_per_page,
+                    "total_elements": no_of_books,
+                }
+        }), 200
 
     @app.route('/book/create', methods=['POST'])
     @jwt_required()
     def add_book():
-        authenticated_user = get_jwt()
-        user_role = authenticated_user.get('role')
-
-        if user_role != 'ADMIN':
+        if not verify_admin_user(get_jwt()):
             return jsonify({"message": "You are not authorized to perform this action"}), 403
 
         isbn = request.json.get('ISBN')
         title = request.json.get('title')
         author_names = request.json.get('authors', [])
         copies_owned = request.json.get('copies_owned', 0)
+
+        if not isbn or not title or not author_names:
+            return jsonify({"message": "Invalid request"}), 400
+
+        if copies_owned == 0:
+            return jsonify({"message": "Please use the delete book option"}), 400
 
         if Book.query.filter_by(ISBN=isbn).first():
             return jsonify({"message": "Book already exists"}), 409
@@ -49,21 +76,27 @@ def book_routes(app):
 
             return jsonify({"message": "Book created successfully"}), 201
         except Exception as e:
-            return jsonify({"message": str(e)}), 500
+            app.logger.error(e)
+            return jsonify({"message": "Internal Server Error, please try again later"}), 500
 
     @app.route('/book/update', methods=['PUT'])
     @jwt_required()
     def update_book():
-        authenticated_user = get_jwt()
-        user_role = authenticated_user.get('role')
-
-        if user_role != 'ADMIN':
+        if not verify_admin_user(get_jwt()):
             return jsonify({"message": "You are not authorized to perform this action"}), 403
 
         isbn = request.json.get('ISBN')
         title = request.json.get('title')
         author_names = request.json.get('authors', [])
+
+        if not isbn or not title or not author_names:
+            return jsonify({"message": "Invalid request"}), 400
+
         copies_owned = request.json.get('copies_owned', 0)
+
+        if copies_owned == 0:
+            return jsonify({"message": "Please use the delete book option"}), 400
+
         current_book = Book.query.filter_by(ISBN=isbn).first()
 
         if not current_book:
@@ -75,54 +108,52 @@ def book_routes(app):
             new_authors = set(author_names)
             current_authors = set([author.name for author in current_book.authors])
 
-            authors_to_remove = current_authors - new_authors
-            for author_name in authors_to_remove:
-                author = Author.query.filter_by(name=author_name).first()
-                if author:
-                    book_author = BookAuthors.query.filter_by(ISBN=current_book.ISBN, author_id=author.id).first()
-                    if book_author:
-                        db.session.delete(book_author)
+            delete_book_authors(current_authors - new_authors, current_book, db)
 
-            authors_to_add = new_authors - current_authors
-            for author_name in authors_to_add:
-                author = Author.query.filter_by(name=author_name).first()
-                if not author:
-                    author = Author(name=author_name)
-                    db.session.add(author)
-                    db.session.flush()
-                book_author = BookAuthors(ISBN=current_book.ISBN, author_id=author.id)
-                db.session.add(book_author)
+            add_book_authors(new_authors - current_authors, current_book, db)
 
             db.session.commit()
-            return jsonify({"message": "Book updated successfully"}), 200
+            return jsonify({"message": "Book updated successfully", "book": current_book.serialize()}), 201
         except Exception as e:
-            return jsonify({"message": str(e)}), 500
+            app.logger.error(e)
+            return jsonify({"message": "Internal Server Error, please try again later"}), 500
 
-    @app.route('/book/filter', methods=['GET'])
+    @app.route('/book/delete', methods=['DELETE'])
     @jwt_required()
-    def filter_books():
-        author = request.args.get('author')
-        title = request.args.get('title')
-        query = Book.query
+    def delete_book():
+        if not verify_admin_user(get_jwt()):
+            return jsonify({"message": "You are not authorized to perform this action"}), 403
 
-        if author:
-            query = query.join(BookAuthors).join(Author).filter(Author.name.ilike(f"%{author}%"))
+        ISBN = request.json.get('ISBN')
 
-        if title:
-            query = query.filter(Book.title.ilike(f"%{title}%"))
+        if not ISBN:
+            return jsonify({"message": "Invalid request"}), 400
 
-        books = query.all()
-        return jsonify({"books": [filtered_book.serialize() for filtered_book in books]}), 200
+        try:
+            book = Book.query.filter_by(ISBN=ISBN).first()
+            book_authors = BookAuthors.query.filter_by(ISBN=ISBN).all()
+            delete_book_authors(set(book_authors), book, db)
+            db.session.delete(book)
+            db.session.commit()
+            return jsonify({"message": "Book deleted successfully"}), 200
+
+        except Exception as e:
+            app.logger.error(e)
+            return jsonify({"message": "Internal Server Error, please try again later"}), 500
 
     @app.route('/book/get_available_books', methods=['GET'])
     @jwt_required()
     def get_available_books():
         page = request.args.get('page', 1, type=int)
         elements_per_page = request.args.get('elements_per_page', 10, type=int)
-        offset = (page - 1) * elements_per_page
-        books = Book.order_by(Book.title).limit(elements_per_page).offset(offset).all()
+        if page < 1 or elements_per_page < 1:
+            return jsonify({"message": "Both page and number of elements per page should be greater than 0"}), 400
+
+        books = Book.query.order_by(Book.title);
+        no_of_books = books.count()
+        paged_books = books.paginate(page=page, per_page=elements_per_page, error_out=False)
         available_books = []
-        for book in books:
+        for book in paged_books:
             borrowed_copies = BookLoan.query.filter_by(ISBN=book.ISBN).order_by(BookLoan.due_return.asc()).all()
             available_copies = book.copies_owned - len(borrowed_copies)
             next_return = borrowed_copies[0] if borrowed_copies else None
@@ -133,4 +164,13 @@ def book_routes(app):
                 available_book.set_user_to_return(next_return.username)
 
             available_books.append(available_book)
-        return jsonify({"available_books": [available_book.serialize() for available_book in available_books]}), 200
+
+        return jsonify({
+            "books": [book.serialize() for book in available_books],
+            "metadata":
+                {
+                    "page": page,
+                    "elements_per_page": elements_per_page,
+                    "total_elements": no_of_books
+                }
+        }), 200

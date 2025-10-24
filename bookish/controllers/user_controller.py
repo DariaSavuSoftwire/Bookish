@@ -1,18 +1,19 @@
 import datetime
+import logging
 
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
+
+from bookish.controllers.utils import verify_admin_user
 from bookish.models.user import User
 from bookish.models import db, Book, BookLoan
 from bookish.models.user_role import Role
-
 
 def user_routes(app):
     @app.route('/user/add_user')
     @jwt_required()
     def add_user():
-        user_role = get_jwt().get('role')
-        if user_role != 'ADMIN':
+        if not verify_admin_user(get_jwt()):
             return jsonify({"message": "You are not authorized to perform this action"}), 403
 
         username = request.json.get('username')
@@ -28,7 +29,8 @@ def user_routes(app):
             db.session.commit()
             return jsonify({"message": "User added successfully"}), 201
         except Exception as e:
-            return jsonify({"message": str(e)}), 500
+            app.logger.error(e)
+            return jsonify({"message": "Internal Server Error, please try again later"}), 500
 
     @app.route('/user/register', methods=['POST'])
     def register():
@@ -50,7 +52,8 @@ def user_routes(app):
             token = create_access_token(identity=new_user.username, additional_claims=role_claim)
             return jsonify({"message": "User created successfully", "token": token}), 201
         except Exception as e:
-            return jsonify({"message": str(e)}), 500
+            app.logger.error(e)
+            return jsonify({"message": "Internal Server Error, please try again later"}), 500
 
     @app.route('/user/login', methods=['POST'])
     def login():
@@ -88,7 +91,8 @@ def user_routes(app):
             db.session.commit()
             return jsonify({"message": "Book loan created successfully"}), 201
         except Exception as e:
-            return jsonify({"message": str(e)}), 500
+            app.logger.error(e)
+            return jsonify({"message": "Internal Server Error, please try again later"}), 500
 
     @app.route('/user/get_loaned_books', methods=['GET'])
     @jwt_required()
