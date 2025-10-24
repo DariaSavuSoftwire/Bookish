@@ -1,26 +1,12 @@
-export class ApiService {
-  healthCheck() {
-    return new Promise((resolve) =>
-      fetch("/healthcheck", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-      })
-        .then((response) => checkResponse(response))
-        .then((response) => resolve(response.json()))
-        .catch((error) => console.error(error))
+import axios from 'axios'
 
-    );
-  }
+const BASE_URL = 'http://localhost:5000'
+
+export async function userLogin(username, password) {
+    const response = await axios.post(BASE_URL + '/user/login', {username: username, password: password});
+    if (response.status === 201) {
+        return response.data.token;
+
+    } else throw Error(response.data.message);
 }
 
-const checkResponse = (response) => {
-  if (response.ok) {
-    return response;
-  }
-  return response.text().then((e) => {
-    throw new Error(e);
-  });
-};
