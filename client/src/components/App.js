@@ -1,35 +1,23 @@
-import React, { useState } from "react";
-import { Container } from "reactstrap";
-import { HomePage } from "./homePage/HomePage";
-import { ApiService } from "./ApiService";
+import React from "react";
+import LoginPage from "./loginPage/LoginPage";
+import AuthProvider from "./authorization/AuthProvider";
+import {Route, Routes, BrowserRouter} from "react-router-dom";
+import PrivateRoute from "./authorization/PrivateRoute";
+import {HomePage} from "./homePage/HomePage";
 
 export default function App() {
-  const apiService = new ApiService()
-  const [state, setState] = useState(BLANK_STATE);
-
-  let healthCheck = () => {
-    apiService.healthCheck().then((status) => {
-      initialize(status);
-    });
-  };
-
-  let initialize = (status) => {
-    setState(status);
-  };
-
-  if (state === BLANK_STATE) {
-    healthCheck()
-  }
-
-  return (
-    <div>
-      <Container>
-          <HomePage okStatus={state.status}/>
-      </Container>
-    </div>
-  );
+    return (
+        <BrowserRouter>
+            <AuthProvider>
+                <Routes>
+                    <Route path="/" element={<LoginPage/>}/>
+                    <Route path="/login" element={<LoginPage/>}/>
+                    <Route path="/register" element={<LoginPage/>}/>
+                    <Route element={<PrivateRoute/>}>
+                        <Route path="/home" element={<HomePage/>}/>
+                    </Route>
+                </Routes>
+            </AuthProvider>
+        </BrowserRouter>
+    );
 }
-
-const BLANK_STATE = {
-  status: ""
-};
