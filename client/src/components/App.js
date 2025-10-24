@@ -3,7 +3,7 @@ import LoginPage from "./loginPage/LoginPage";
 import AuthProvider from "./authorization/AuthProvider";
 import {Route, Routes, BrowserRouter} from "react-router-dom";
 import PrivateRoute from "./authorization/PrivateRoute";
-import {HomePage} from "./homePage/HomePage";
+import HomePage from "./homePage/HomePage";
 
 export default function App() {
     return (

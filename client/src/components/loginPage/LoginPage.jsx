@@ -1,6 +1,15 @@
 import {useState} from "react";
 import {useAuth} from "../authorization/AuthProvider";
 import {useNavigate} from "react-router-dom";
+import {
+    LoginWrapper,
+    LoginForm,
+    LoginInput,
+    LoginButton,
+    LoginTitle,
+    RegisterText,
+    RegisterLink
+} from "./LoginComponents";
 
 const LoginPage = () => {
     const [username, setUsername] = useState("");
@@ -18,22 +27,30 @@ const LoginPage = () => {
     }
 
     return (
-        <div>
-            <input
-                type="string"
-                id="username"
-                name="username"
-                placeholder="Username"
-                onChange={(e) => setUsername(e.target.value)}
-            />
-            <input
-                type="password"
-                id="password"
-                name="password"
-                placeholder="Password"
-                onChange={(e) => setPassword(e.target.value)}/>
-            <button onClick={handleLogin}>Login</button>
-        </div>
+        <LoginWrapper>
+            <LoginTitle>Welcome to Bookish</LoginTitle>
+            <LoginForm>
+                <LoginInput
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="Username"
+                    onChange={(e) => setUsername(e.target.value)}
+                />
+                <LoginInput
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Password"
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+                <LoginButton onClick={handleLogin}>Login</LoginButton>
+                <RegisterText>
+                    Don’t have an account?
+                    <RegisterLink onClick={() => navigate('/register')}>Register now</RegisterLink>
+                </RegisterText>
+            </LoginForm>
+        </LoginWrapper>
     )
 }
 

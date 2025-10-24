@@ -2,6 +2,7 @@ import React, {useEffect} from "react";
 import {createContext, useContext} from "react";
 import {useNavigate} from "react-router-dom";
 import {userLogin} from "../ApiService";
+import {jwtDecode} from "jwt-decode";
 
 const AuthContext = createContext();
 const AuthProvider = ({children}) => {
@@ -9,11 +10,32 @@ const AuthProvider = ({children}) => {
     const [token, setToken] = React.useState(localStorage.getItem("bookish_token") || "");
     const navigate = useNavigate();
 
+    const isTokenExpired = (token) => {
+        try {
+            const decoded = jwtDecode(token);
+            const expiry = decoded.exp;
+            const now = Date.now() / 1000;
+            return expiry < now;
+        } catch (e) {
+            console.error("Invalid token:", e);
+            setUser(null);
+            setToken("");
+            return true;
+        }
+    }
+
+
     useEffect(() => {
         console.log(token);
-        if (token) {
-            navigate('/home');
+        if (!token)
+            return;
+        if (isTokenExpired(token)) {
+            setUser(null);
+            setToken("");
+            return;
         }
+        navigate('/home');
+
     }, []);
 
     const login = async (username, password) => {
