@@ -9,7 +9,7 @@ const AuthProvider = ({children}) => {
     const [user, setUser] = React.useState(null);
     const [token, setToken] = React.useState(localStorage.getItem("bookish_token") || "");
     const [error, setError] = React.useState("");
-    const [errorType, setErrorType] = React.useState("");
+    const [isRegisterPage, setIsRegisterPage] = React.useState(false);
     const [isAdmin, setIsAdmin] = React.useState(false);
     const navigate = useNavigate();
 
@@ -24,6 +24,7 @@ const AuthProvider = ({children}) => {
             return true;
         }
     }
+
 
     useEffect(() => {
         console.log(token);
@@ -46,12 +47,12 @@ const AuthProvider = ({children}) => {
             setToken(response.token);
             localStorage.setItem("bookish_token", response.token);
             setError("");
-            setErrorType("")
+            setIsRegisterPage(false);
             setIsAdmin(response.role === "ADMIN");
         } catch (error) {
             console.log(error);
             setError(error.response.data.message);
-            setErrorType("login");
+            setIsRegisterPage(false);
         }
     }
 
@@ -62,12 +63,12 @@ const AuthProvider = ({children}) => {
             setToken(response.token);
             localStorage.setItem("bookish_token", response.token);
             setError("")
-            setErrorType("")
             setIsAdmin(response.role === "ADMIN");
+            setIsRegisterPage(true);
         } catch (error) {
             console.log(error);
             setError(error.response.data.message);
-            setErrorType("register");
+            setIsRegisterPage(true);
         }
     }
 
@@ -79,7 +80,7 @@ const AuthProvider = ({children}) => {
         navigate("/login");
     }
 
-    return <AuthContext.Provider value={{token, user, login, register, logout, isAdmin, error, errorType}}>{children}
+    return <AuthContext.Provider value={{token, user, login, register, logout, isAdmin, error, isRegisterPage}}>{children}
     </AuthContext.Provider>;
 };
 
