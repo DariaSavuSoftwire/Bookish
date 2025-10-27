@@ -35,7 +35,7 @@ const AuthProvider = ({children}) => {
         }
         navigate('/home');
 
-    }, []);
+    }, [token,navigate]);
 
     const login = async (username, password) => {
         try {
