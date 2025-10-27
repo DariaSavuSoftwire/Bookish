@@ -9,6 +9,7 @@ from bookish.models.user import User
 from bookish.models import db, Book, BookLoan
 from bookish.models.user_role import Role
 
+
 def user_routes(app):
     @app.route('/user/add_user')
     @jwt_required()
@@ -50,7 +51,7 @@ def user_routes(app):
             db.session.commit()
             role_claim = {"role": "USER"}
             token = create_access_token(identity=new_user.username, additional_claims=role_claim)
-            return jsonify({"message": "User created successfully", "token": token}), 201
+            return jsonify({"message": "User created successfully", "token": token, "role": user.role.name}), 201
         except Exception as e:
             app.logger.error(e)
             return jsonify({"message": "Internal Server Error, please try again later"}), 500
@@ -65,7 +66,7 @@ def user_routes(app):
             return jsonify({"message": "Username or password is incorrect"}), 400
 
         token = create_access_token(identity=user.username, additional_claims={"role": user.role.name})
-        return jsonify({"message": "User logged in successfully", "token": token}), 201
+        return jsonify({"message": "User logged in successfully", "token": token, "role": user.role.name}), 201
 
     @app.route('/user/loan', methods=['POST'])
     @jwt_required()

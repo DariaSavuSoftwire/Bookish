@@ -10,6 +10,7 @@ const AuthProvider = ({children}) => {
     const [token, setToken] = React.useState(localStorage.getItem("bookish_token") || "");
     const [error, setError] = React.useState("");
     const [errorType, setErrorType] = React.useState("");
+    const [isAdmin, setIsAdmin] = React.useState(false);
     const navigate = useNavigate();
 
     const isTokenExpired = (token) => {
@@ -23,7 +24,6 @@ const AuthProvider = ({children}) => {
             return true;
         }
     }
-
 
     useEffect(() => {
         console.log(token);
@@ -41,12 +41,13 @@ const AuthProvider = ({children}) => {
 
     const login = async (username, password) => {
         try {
-            const token = await userLogin(username, password);
+            const response = await userLogin(username, password);
             setUser(username);
-            setToken(token);
+            setToken(response.token);
             localStorage.setItem("bookish_token", token);
             setError("");
             setErrorType("")
+            setIsAdmin(response.role === "ADMIN");
         } catch (error) {
             console.log(error);
             setError(error.response.data.message);
@@ -56,12 +57,13 @@ const AuthProvider = ({children}) => {
 
     const register = async (username, name, password) => {
         try {
-            const token = await userRegister(username, name, password);
+            const response = await userRegister(username, name, password);
             setUser(username);
-            setToken(token);
+            setToken(response.token);
             localStorage.setItem("bookish_token", token);
             setError("")
             setErrorType("")
+            setIsAdmin(response.role === "ADMIN");
         } catch (error) {
             console.log(error);
             setError(error.response.data.message);
@@ -77,7 +79,7 @@ const AuthProvider = ({children}) => {
         navigate("/login");
     }
 
-    return <AuthContext.Provider value={{token, user, login, register, logout, error, errorType}}>{children}
+    return <AuthContext.Provider value={{token, user, login, register, logout, isAdmin, error, errorType}}>{children}
     </AuthContext.Provider>;
 };
 

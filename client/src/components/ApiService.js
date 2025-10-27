@@ -5,7 +5,7 @@ const BASE_URL = 'http://localhost:5000'
 export async function userLogin(username, password) {
     const response = await axios.post(BASE_URL + '/user/login', {username: username, password: password});
     if (response.status === 201) {
-        return response.data.token;
+        return response.data;
 
     } else {
         console.log(response);
@@ -20,9 +20,25 @@ export async function userRegister(username, name, password) {
         password: password
     });
     if (response.status === 201) {
-        return response.data.token;
+        return response.data;
 
     } else {
+        console.log(response);
+        throw Error(response.data.message);
+    }
+}
+
+export async function getAllBooks(token) {
+    const response = await axios.get(BASE_URL + '/book/get_all',{
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+    if(response.status === 200) {
+        return response.data.books;
+    }
+    else
+    {
         console.log(response);
         throw Error(response.data.message);
     }
