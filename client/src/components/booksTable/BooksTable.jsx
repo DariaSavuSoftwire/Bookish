@@ -1,6 +1,7 @@
 import {Table, TableWrapper, Td, Th, Tr} from "./BooksTableComponents";
 
 const BooksTable = ({books}) => {
+
     return (<TableWrapper>
         <Table>
             <thead>
@@ -9,17 +10,19 @@ const BooksTable = ({books}) => {
                 <Th>Author</Th>
                 <Th>Owned Copies</Th>
                 <Th>Available Copies</Th>
-                <Th></Th>
-                <Th></Th>
+                <Th>Next Return Date</Th>
+                <Th>Next User To Return</Th>
             </tr>
             </thead>
             <tbody>
             {books.map((book) => (
-                <Tr key={book.id}>
+                <Tr key={book.book_id}>
                     <Td>{book.title}</Td>
                     <Td>{book.author}</Td>
-                    <Td>{book.genre}</Td>
-                    <Td>{book.year}</Td>
+                    <Td>{book.copies_owned}</Td>
+                    <Td>{book.copies_available}</Td>
+                    <Td>{book.return_date}</Td>
+                    <Td>{book.user_to_return}</Td>
                 </Tr>
             ))}
             </tbody>

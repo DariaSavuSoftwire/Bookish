@@ -28,17 +28,21 @@ export async function userRegister(username, name, password) {
     }
 }
 
-export async function getAllBooks(token) {
-    const response = await axios.get(BASE_URL + '/book/get_all',{
+export async function getAllBooks(token, elementsPerPage, currentPage, title, author) {
+    const response = await axios.get(BASE_URL + '/book/get_all', {
+        data: {
+            elements_per_page: elementsPerPage,
+            page: currentPage,
+            title: title ?? null,
+            author: author ?? null,
+        },
         headers: {
             Authorization: `Bearer ${token}`
         }
     });
-    if(response.status === 200) {
-        return response.data.books;
-    }
-    else
-    {
+    if (response.status === 200) {
+        return response.data;
+    } else {
         console.log(response);
         throw Error(response.data.message);
     }

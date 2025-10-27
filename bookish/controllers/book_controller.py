@@ -149,7 +149,17 @@ def book_routes(app):
         if page < 1 or elements_per_page < 1:
             return jsonify({"message": "Both page and number of elements per page should be greater than 0"}), 400
 
-        books = Book.query.order_by(Book.title);
+        author = request.args.get('author')
+        title = request.args.get('title')
+        query = Book.query
+
+        if author:
+            query = query.join(BookAuthors).join(Author).filter(Author.name.ilike(f"%{author}%"))
+
+        if title:
+            query = query.filter(Book.title.ilike(f"%{title}%"))
+
+        books = query.order_by(Book.title)
         no_of_books = books.count()
         paged_books = books.paginate(page=page, per_page=elements_per_page, error_out=False)
         available_books = []
