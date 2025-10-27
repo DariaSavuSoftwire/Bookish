@@ -8,7 +8,7 @@ export const HomeDiv = styled.div`
 `;
 
 export const HomeTitleContainer = styled.div`
-  display block;
+  display: block;
   height: 100px;
   padding: 12px;
   margin:20px;
