@@ -16,18 +16,19 @@ const HomePage = () => {
     const [authorFilter, setAuthorFilter] = React.useState("");
     const {token} = useAuth();
 
-    useEffect(() => {
-        async function getBooks() {
-            try {
-                const response = await getAllBooks(token, currentPage, elementsPerPage, titleFilter, authorFilter);
-                setBooks(response.books);
-            } catch (error) {
-                console.log(error);
-            }
+    async function getBooks() {
+        try {
+            const response = await getAllBooks(token, currentPage, elementsPerPage, titleFilter, authorFilter);
+            console.log(response);
+            setBooks(response.books);
+        } catch (error) {
+            console.log(error);
         }
+    }
 
+    useEffect(() => {
         getBooks();
-    }, [])
+    }, [currentPage, elementsPerPage]);
 
     return (
         <HomeDiv>
@@ -36,9 +37,7 @@ const HomePage = () => {
                 <Button>Delete Book</Button>
             </>
             }
-            <BooksTable>
-                {books}
-            </BooksTable>
+            <BooksTable books={books} />
         </HomeDiv>
     );
 

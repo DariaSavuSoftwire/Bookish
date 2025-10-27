@@ -29,7 +29,7 @@ export async function userRegister(username, name, password) {
 }
 
 export async function getAllBooks(token, elementsPerPage, currentPage, title, author) {
-    const response = await axios.get(BASE_URL + '/book/get_all', {
+    const response = await axios.get(BASE_URL + '/book/get_available_books', {
         data: {
             elements_per_page: elementsPerPage,
             page: currentPage,

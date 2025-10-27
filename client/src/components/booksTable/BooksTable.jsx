@@ -1,13 +1,13 @@
 import {Table, TableWrapper, Td, Th, Tr} from "./BooksTableComponents";
+import {useEffect} from "react";
 
 const BooksTable = ({books}) => {
-
     return (<TableWrapper>
         <Table>
             <thead>
             <tr>
                 <Th>Title</Th>
-                <Th>Author</Th>
+                <Th>Author(s)</Th>
                 <Th>Owned Copies</Th>
                 <Th>Available Copies</Th>
                 <Th>Next Return Date</Th>
@@ -15,14 +15,14 @@ const BooksTable = ({books}) => {
             </tr>
             </thead>
             <tbody>
-            {books.map((book) => (
+            {books && books.map((book) => (
                 <Tr key={book.book_id}>
-                    <Td>{book.title}</Td>
-                    <Td>{book.author}</Td>
+                    <Td>{book.book_title}</Td>
+                    <Td>{book.authors.join(', ')}</Td>
                     <Td>{book.copies_owned}</Td>
                     <Td>{book.copies_available}</Td>
-                    <Td>{book.return_date}</Td>
-                    <Td>{book.user_to_return}</Td>
+                    <Td>{book.return_date ?? ""}</Td>
+                    <Td>{book.user_to_return ?? ""}</Td>
                 </Tr>
             ))}
             </tbody>

@@ -44,7 +44,7 @@ const AuthProvider = ({children}) => {
             const response = await userLogin(username, password);
             setUser(username);
             setToken(response.token);
-            localStorage.setItem("bookish_token", token);
+            localStorage.setItem("bookish_token", response.token);
             setError("");
             setErrorType("")
             setIsAdmin(response.role === "ADMIN");
@@ -60,7 +60,7 @@ const AuthProvider = ({children}) => {
             const response = await userRegister(username, name, password);
             setUser(username);
             setToken(response.token);
-            localStorage.setItem("bookish_token", token);
+            localStorage.setItem("bookish_token", response.token);
             setError("")
             setErrorType("")
             setIsAdmin(response.role === "ADMIN");
