@@ -10,6 +10,7 @@ import {
     RegisterText,
     RegisterLink, Error
 } from "./LoginComponents";
+import {object, string} from 'yup';
 
 const LoginPage = () => {
     const [username, setUsername] = useState("");
@@ -20,24 +21,41 @@ const LoginPage = () => {
     const {login, register, error: loginError, errorType} = useAuth();
     const navigate = useNavigate();
 
+    const loginSchema = object({
+        username: string().required("Username is required"),
+        password: string().required("Password is required"),
+    });
+
+    const registerSchema = object({
+        username: string().required("Username is required"),
+        name: string().required("Name is required"),
+        password: string().required("Password is required"),
+    });
+
+
     const handleLogin = async () => {
-        if (!username || !password) {
-            console.log("All fields are required");
-            setError("All fields are required");
-            return;
+        try {
+            await loginSchema.validate({username: username, password: password}, {abortEarly: false});
+            await login(username, password);
+            navigate('/home');
+        } catch (error) {
+            if (error.name === "ValidationError") {
+                setError(error.errors.join(", "));
+            }
         }
-        await login(username, password);
-        navigate('/home');
     }
 
     const handleRegister = async () => {
-        if (!username || !password || !name) {
-            console.log("All fields are required");
-            setError("All fields are required");
-            return;
+        try {
+            await registerSchema.validate({username: username, password: password}, {abortEarly: false});
+            await register(username, name, password);
+            navigate('/home');
+        } catch (error) {
+            if (error.name === "ValidationError") {
+                setError(error.errors.join(", "));
+            }
         }
-        await register(username, name, password);
-        navigate('/home');
+
     }
 
     useEffect(() => {
@@ -81,33 +99,43 @@ const LoginPage = () => {
                     placeholder="Password"
                     onChange={(e) => setPassword(e.target.value)}
                 />
-                {toRegister ?
-                    <><LoginButton onClick={handleRegister}>Register</LoginButton>
+                {toRegister ? (
+                    <div>
+                        <LoginButton onClick={handleRegister}>Register</LoginButton>
+
                         <RegisterText>
                             Already have an account?
-                            <RegisterLink onClick={() => {
-                                resetForm();
-                                setToRegister(false);
-                            }}>Login now</RegisterLink>
+                            <RegisterLink
+                                onClick={() => {
+                                    resetForm();
+                                    setToRegister(false);
+                                }}
+                            >
+                                Login now
+                            </RegisterLink>
                         </RegisterText>
-                        {error &&
-                            <Error>{error}</Error>}</>
-                    :
-                    <>
+
+                        {error && <Error>{error}</Error>}
+                    </div>
+                ) : (
+                    <div>
                         <LoginButton onClick={handleLogin}>Login</LoginButton>
+
                         <RegisterText>
                             Don’t have an account?
-                            <RegisterLink onClick={() => {
-                                resetForm();
-                                setToRegister(true);
-                            }}>Register now</RegisterLink>
+                            <RegisterLink
+                                onClick={() => {
+                                    resetForm();
+                                    setToRegister(true);
+                                }}
+                            >
+                                Register now
+                            </RegisterLink>
                         </RegisterText>
-                        {
-                            error &&
-                            <Error>{error}</Error>
-                        }
-                    </>
-                }
+
+                        {error && <Error>{error}</Error>}
+                    </div>
+                )}
             </LoginForm>
         </LoginWrapper>
     )
