@@ -9,7 +9,7 @@ const AuthProvider = ({children}) => {
     const [user, setUser] = React.useState(null);
     const [token, setToken] = React.useState(localStorage.getItem("bookish_token") || "");
     const [error, setError] = React.useState("");
-    const [errorType, setErrorType] = React.useState("");
+    const [isRegisterPage, setIsRegisterPage] = React.useState(false);
     const navigate = useNavigate();
 
     const isTokenExpired = (token) => {
@@ -46,11 +46,11 @@ const AuthProvider = ({children}) => {
             setToken(token);
             localStorage.setItem("bookish_token", token);
             setError("");
-            setErrorType("")
+            setIsRegisterPage(false);
         } catch (error) {
             console.log(error);
             setError(error.response.data.message);
-            setErrorType("login");
+            setIsRegisterPage(false);
         }
     }
 
@@ -61,11 +61,11 @@ const AuthProvider = ({children}) => {
             setToken(token);
             localStorage.setItem("bookish_token", token);
             setError("")
-            setErrorType("")
+            setIsRegisterPage(true);
         } catch (error) {
             console.log(error);
             setError(error.response.data.message);
-            setErrorType("register");
+            setIsRegisterPage(true);
         }
     }
 
@@ -77,7 +77,7 @@ const AuthProvider = ({children}) => {
         navigate("/login");
     }
 
-    return <AuthContext.Provider value={{token, user, login, register, logout, error, errorType}}>{children}
+    return <AuthContext.Provider value={{token, user, login, register, logout, error, isRegisterPage}}>{children}
     </AuthContext.Provider>;
 };
 

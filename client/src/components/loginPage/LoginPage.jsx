@@ -10,28 +10,16 @@ import {
     RegisterText,
     RegisterLink, Error
 } from "./LoginComponents";
-import {object, string} from 'yup';
+import {loginSchema, registerSchema} from "../Schemas";
 
 const LoginPage = () => {
     const [username, setUsername] = useState("");
     const [name, setName] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
     const [toRegister, setToRegister] = useState(false);
-    const {login, register, error: loginError, errorType} = useAuth();
+    const {login, register, error: loginError, isRegisterPage} = useAuth();
     const navigate = useNavigate();
-
-    const loginSchema = object({
-        username: string().required("Username is required"),
-        password: string().required("Password is required"),
-    });
-
-    const registerSchema = object({
-        username: string().required("Username is required"),
-        name: string().required("Name is required"),
-        password: string().required("Password is required"),
-    });
-
 
     const handleLogin = async () => {
         try {
@@ -40,7 +28,7 @@ const LoginPage = () => {
             navigate('/home');
         } catch (error) {
             if (error.name === "ValidationError") {
-                setError(error.errors.join(", "));
+                setErrorMessage(error.errors.join(", "));
             }
         }
     }
@@ -52,7 +40,7 @@ const LoginPage = () => {
             navigate('/home');
         } catch (error) {
             if (error.name === "ValidationError") {
-                setError(error.errors.join(", "));
+                setErrorMessage(error.errors.join(", "));
             }
         }
 
@@ -61,15 +49,15 @@ const LoginPage = () => {
     useEffect(() => {
         if (!loginError)
             return;
-        setToRegister(errorType === "register");
-        setError(loginError);
-    }, [loginError, errorType]);
+        setToRegister(isRegisterPage);
+        setErrorMessage(loginError);
+    }, [loginError, isRegisterPage]);
 
     const resetForm = () => {
-        setError("");
+        setErrorMessage("");
         setName("");
         setPassword("");
-        setError("");
+        setErrorMessage("");
     }
 
     return (
@@ -115,7 +103,7 @@ const LoginPage = () => {
                             </RegisterLink>
                         </RegisterText>
 
-                        {error && <Error>{error}</Error>}
+                        {errorMessage && <Error>{errorMessage}</Error>}
                     </div>
                 ) : (
                     <div>
@@ -133,7 +121,7 @@ const LoginPage = () => {
                             </RegisterLink>
                         </RegisterText>
 
-                        {error && <Error>{error}</Error>}
+                        {errorMessage && <Error>{errorMessage}</Error>}
                     </div>
                 )}
             </LoginForm>
