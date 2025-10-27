@@ -51,6 +51,7 @@ export const LoginButton = styled.button`
     border: none;
     border-radius: 8px;
     font-size: 16px;
+    width: 100%;
     cursor: pointer;
     transition: all 0.3s ease;
 
@@ -81,3 +82,27 @@ export const RegisterLink = styled.a`
     }
 `;
 
+export const Error = styled.div`
+    background-color: #ffe5e5;
+    color: #b00020;
+    border: 1px solid rgba(176, 0, 32, 0.2);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-top: 12px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(176, 0, 32, 0.05);
+    animation: fadeIn 0.3s ease-in-out;
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-4px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+`;

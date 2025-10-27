@@ -1,13 +1,15 @@
 import React, {useEffect} from "react";
 import {createContext, useContext} from "react";
 import {useNavigate} from "react-router-dom";
-import {userLogin} from "../ApiService";
+import {userLogin, userRegister} from "../ApiService";
 import {jwtDecode} from "jwt-decode";
 
 const AuthContext = createContext();
 const AuthProvider = ({children}) => {
     const [user, setUser] = React.useState(null);
     const [token, setToken] = React.useState(localStorage.getItem("bookish_token") || "");
+    const [error, setError] = React.useState("");
+    const [isRegisterPage, setIsRegisterPage] = React.useState(false);
     const navigate = useNavigate();
 
     const isTokenExpired = (token) => {
@@ -35,7 +37,7 @@ const AuthProvider = ({children}) => {
         }
         navigate('/home');
 
-    }, [token,navigate]);
+    }, [token, navigate]);
 
     const login = async (username, password) => {
         try {
@@ -43,10 +45,30 @@ const AuthProvider = ({children}) => {
             setUser(username);
             setToken(token);
             localStorage.setItem("bookish_token", token);
+            setError("");
+            setIsRegisterPage(false);
         } catch (error) {
             console.log(error);
+            setError(error.response.data.message);
+            setIsRegisterPage(false);
         }
     }
+
+    const register = async (username, name, password) => {
+        try {
+            const token = await userRegister(username, name, password);
+            setUser(username);
+            setToken(token);
+            localStorage.setItem("bookish_token", token);
+            setError("")
+            setIsRegisterPage(true);
+        } catch (error) {
+            console.log(error);
+            setError(error.response.data.message);
+            setIsRegisterPage(true);
+        }
+    }
+
 
     const logout = () => {
         setToken("");
@@ -55,7 +77,7 @@ const AuthProvider = ({children}) => {
         navigate("/login");
     }
 
-    return <AuthContext.Provider value={{token, user, login, logout}}>{children}
+    return <AuthContext.Provider value={{token, user, login, register, logout, error, isRegisterPage}}>{children}
     </AuthContext.Provider>;
 };
 

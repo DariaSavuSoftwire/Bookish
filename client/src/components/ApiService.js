@@ -7,6 +7,23 @@ export async function userLogin(username, password) {
     if (response.status === 201) {
         return response.data.token;
 
-    } else throw Error(response.data.message);
+    } else {
+        console.log(response);
+        throw Error(response.data.message);
+    }
 }
 
+export async function userRegister(username, name, password) {
+    const response = await axios.post(BASE_URL + '/user/register', {
+        username: username,
+        name: name,
+        password: password
+    });
+    if (response.status === 201) {
+        return response.data.token;
+
+    } else {
+        console.log(response);
+        throw Error(response.data.message);
+    }
+}

@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {useAuth} from "../authorization/AuthProvider";
 import {useNavigate} from "react-router-dom";
 import {
@@ -8,22 +8,56 @@ import {
     LoginButton,
     LoginTitle,
     RegisterText,
-    RegisterLink
+    RegisterLink, Error
 } from "./LoginComponents";
+import {loginSchema, registerSchema} from "../Schemas";
 
 const LoginPage = () => {
     const [username, setUsername] = useState("");
+    const [name, setName] = useState("");
     const [password, setPassword] = useState("");
-    const {login} = useAuth();
+    const [errorMessage, setErrorMessage] = useState("");
+    const [toRegister, setToRegister] = useState(false);
+    const {login, register, error: loginError, isRegisterPage} = useAuth();
     const navigate = useNavigate();
 
     const handleLogin = async () => {
-        if (!username || !password) {
-            console.log("Username or password is required");
-            return;
+        try {
+            await loginSchema.validate({username: username, password: password}, {abortEarly: false});
+            await login(username, password);
+            navigate('/home');
+        } catch (error) {
+            if (error.name === "ValidationError") {
+                setErrorMessage(error.errors.join(", "));
+            }
         }
-        await login(username, password);
-        navigate('/home');
+    }
+
+    const handleRegister = async () => {
+        try {
+            await registerSchema.validate({username: username, password: password}, {abortEarly: false});
+            await register(username, name, password);
+            navigate('/home');
+        } catch (error) {
+            if (error.name === "ValidationError") {
+                setErrorMessage(error.errors.join(", "));
+            }
+        }
+
+    }
+
+    useEffect(() => {
+        if (!loginError)
+            return;
+        setToRegister(isRegisterPage);
+        setErrorMessage(loginError);
+    }, [loginError, isRegisterPage]);
+
+    const resetForm = () => {
+        setErrorMessage("");
+        setName("");
+        setPassword("");
+        setErrorMessage("");
     }
 
     return (
@@ -37,6 +71,15 @@ const LoginPage = () => {
                     placeholder="Username"
                     onChange={(e) => setUsername(e.target.value)}
                 />
+                {toRegister &&
+                    <LoginInput
+                        type="text"
+                        id="name"
+                        name="name"
+                        placeholder="Name"
+                        onChange={(e) => setName(e.target.value)}
+                    />
+                }
                 <LoginInput
                     type="password"
                     id="password"
@@ -44,11 +87,43 @@ const LoginPage = () => {
                     placeholder="Password"
                     onChange={(e) => setPassword(e.target.value)}
                 />
-                <LoginButton onClick={handleLogin}>Login</LoginButton>
-                <RegisterText>
-                    Don’t have an account?
-                    <RegisterLink href='/register'>Register now</RegisterLink>
-                </RegisterText>
+                {toRegister ? (
+                    <div>
+                        <LoginButton onClick={handleRegister}>Register</LoginButton>
+
+                        <RegisterText>
+                            Already have an account?
+                            <RegisterLink
+                                onClick={() => {
+                                    resetForm();
+                                    setToRegister(false);
+                                }}
+                            >
+                                Login now
+                            </RegisterLink>
+                        </RegisterText>
+
+                        {errorMessage && <Error>{errorMessage}</Error>}
+                    </div>
+                ) : (
+                    <div>
+                        <LoginButton onClick={handleLogin}>Login</LoginButton>
+
+                        <RegisterText>
+                            Don’t have an account?
+                            <RegisterLink
+                                onClick={() => {
+                                    resetForm();
+                                    setToRegister(true);
+                                }}
+                            >
+                                Register now
+                            </RegisterLink>
+                        </RegisterText>
+
+                        {errorMessage && <Error>{errorMessage}</Error>}
+                    </div>
+                )}
             </LoginForm>
         </LoginWrapper>
     )

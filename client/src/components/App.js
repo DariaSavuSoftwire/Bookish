@@ -12,7 +12,6 @@ export default function App() {
                 <Routes>
                     <Route path="/" element={<LoginPage/>}/>
                     <Route path="/login" element={<LoginPage/>}/>
-                    <Route path="/register" element={<LoginPage/>}/>
                     <Route element={<PrivateRoute/>}>
                         <Route path="/home" element={<HomePage/>}/>
                     </Route>
