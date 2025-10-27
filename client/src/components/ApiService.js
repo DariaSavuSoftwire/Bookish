@@ -8,7 +8,6 @@ export async function userLogin(username, password) {
         return response.data;
 
     } else {
-        console.log(response);
         throw Error(response.data.message);
     }
 }
@@ -23,7 +22,6 @@ export async function userRegister(username, name, password) {
         return response.data;
 
     } else {
-        console.log(response);
         throw Error(response.data.message);
     }
 }
@@ -43,7 +41,6 @@ export async function getAllBooks(token, elementsPerPage, currentPage, title, au
     if (response.status === 200) {
         return response.data;
     } else {
-        console.log(response);
         throw Error(response.data.message);
     }
 }

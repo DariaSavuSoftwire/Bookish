@@ -1,5 +1,4 @@
 import datetime
-import logging
 
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
@@ -8,7 +7,6 @@ from bookish.controllers.utils import verify_admin_user
 from bookish.models.user import User
 from bookish.models import db, Book, BookLoan
 from bookish.models.user_role import Role
-
 
 def user_routes(app):
     @app.route('/user/add_user')

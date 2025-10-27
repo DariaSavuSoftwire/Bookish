@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled, {css} from "styled-components";
 
 export const PageContainer = styled.div`
     display: flex;
@@ -87,12 +87,17 @@ export const Input = styled.input`
     border-radius: 8px;
     font-size: 1rem;
     transition: border-color 0.2s, box-shadow 0.2s;
-
+    text-align: left;
+    width: 20vw;
     &:focus {
         outline: none;
         border-color: #007bff;
         box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
     }
+    ${({ variant }) => variant === 'elements' && css`
+        text-align: center;
+        width:5vw;
+    `}
 `;
 
 export const Label = styled.label`

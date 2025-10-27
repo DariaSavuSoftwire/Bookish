@@ -47,8 +47,8 @@ const HomePage = () => {
                 <UserActions>
                     {isAdmin && (
                         <AdminActions>
-                            <Button variant="primary" onClick={() => console.log("Add Book clicked")}>Add Book</Button>
-                            <Button variant="primary" onClick={() => console.log("Add User clicked")}>Add User</Button>
+                            <Button>Add Book</Button>
+                            <Button>Add User</Button>
                         </AdminActions>
                     )}
                     <Button onClick={logout}>Logout</Button>
@@ -58,12 +58,12 @@ const HomePage = () => {
             <Controls>
                 <SearchBar>
                     <Input
-                        placeholder="Filter by title..."
+                        placeholder="Search by title..."
                         value={titleFilter}
                         onChange={(e) => setTitleFilter(e.target.value)}
                     />
                     <Input
-                        placeholder="Filter by author..."
+                        placeholder="Search by author..."
                         value={authorFilter}
                         onChange={(e) => setAuthorFilter(e.target.value)}
                     />
@@ -75,8 +75,8 @@ const HomePage = () => {
                         type="number"
                         value={elementsPerPage}
                         min={1}
+                        variant="elements"
                         onChange={(e) => setElementsPerPage(Number(e.target.value))}
-                        style={{width: '80px', textAlign: 'center'}}
                     />
                 </div>
             </Controls>

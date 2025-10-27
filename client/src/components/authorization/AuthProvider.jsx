@@ -3,14 +3,15 @@ import {createContext, useContext} from "react";
 import {useNavigate} from "react-router-dom";
 import {userLogin, userRegister} from "../ApiService";
 import {jwtDecode} from "jwt-decode";
+import {AUTH_TOKEN_KEY, USER_ROLE_KEY} from "../Constants";
 
 const AuthContext = createContext();
 const AuthProvider = ({children}) => {
     const [user, setUser] = React.useState(null);
-    const [token, setToken] = React.useState(localStorage.getItem("bookish_token") || "");
+    const [token, setToken] = React.useState(localStorage.getItem(AUTH_TOKEN_KEY) || "");
     const [error, setError] = React.useState("");
     const [isRegisterPage, setIsRegisterPage] = React.useState(false);
-    const [isAdmin, setIsAdmin] = React.useState(localStorage.getItem("user_role") === "ADMIN" || false);
+    const [isAdmin, setIsAdmin] = React.useState(localStorage.getItem(USER_ROLE_KEY) === "ADMIN" || false);
     const navigate = useNavigate();
 
     const isTokenExpired = (token) => {
@@ -32,8 +33,8 @@ const AuthProvider = ({children}) => {
         if (isTokenExpired(token)) {
             setUser(null);
             setToken("");
-            localStorage.removeItem("bookish_token");
-            localStorage.removeItem("user_role");
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+            localStorage.removeItem(USER_ROLE_KEY);
             return;
         }
         navigate('/home');
@@ -45,8 +46,8 @@ const AuthProvider = ({children}) => {
             const response = await userLogin(username, password);
             setUser(username);
             setToken(response.token);
-            localStorage.setItem("bookish_token", response.token);
-            localStorage.setItem("user_role", response.role);
+            localStorage.setItem(AUTH_TOKEN_KEY, response.token);
+            localStorage.setItem(USER_ROLE_KEY, response.role);
             setIsAdmin(response.role === "ADMIN");
             setError("");
             setIsRegisterPage(false);
@@ -62,8 +63,8 @@ const AuthProvider = ({children}) => {
             const response = await userRegister(username, name, password);
             setUser(username);
             setToken(response.token);
-            localStorage.setItem("bookish_token", response.token);
-            localStorage.setItem("user_role", response.role);
+            localStorage.setItem(AUTH_TOKEN_KEY, response.token);
+            localStorage.setItem(USER_ROLE_KEY, response.role);
             setIsAdmin(response.role === "ADMIN");
             setError("")
             setIsRegisterPage(true);
@@ -78,8 +79,8 @@ const AuthProvider = ({children}) => {
     const logout = () => {
         setToken("");
         setUser(null);
-        localStorage.removeItem("bookish_token");
-        localStorage.removeItem("user_role");
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        localStorage.removeItem(USER_ROLE_KEY);
         navigate("/login");
     }
 
