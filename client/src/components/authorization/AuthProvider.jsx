@@ -18,8 +18,6 @@ const AuthProvider = ({children}) => {
             return expiry < now;
         } catch (e) {
             console.error("Invalid token:", e);
-            setUser(null);
-            setToken("");
             return true;
         }
     }
@@ -32,6 +30,7 @@ const AuthProvider = ({children}) => {
         if (isTokenExpired(token)) {
             setUser(null);
             setToken("");
+            localStorage.removeItem("bookish_token");
             return;
         }
         navigate('/home');

@@ -1,4 +1,4 @@
-import React from  "react";
+import React from "react";
 import {
     HomeDiv,
     HomeTitleTag,
@@ -7,13 +7,13 @@ import {
 import {useAuth} from "../authorization/AuthProvider";
 
 const HomePage = () => {
-    const authentication = useAuth();
+    const {logout} = useAuth();
 
     return (
         <HomeDiv>
             <HomeTitleContainer>
                 <HomeTitleTag>Status:</HomeTitleTag>
-                <button onClick={authentication.logout}>Logout</button>
+                <button onClick={logout}>Logout</button>
             </HomeTitleContainer>
         </HomeDiv>
     );

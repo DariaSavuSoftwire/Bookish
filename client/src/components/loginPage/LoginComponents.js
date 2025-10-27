@@ -70,7 +70,7 @@ export const RegisterText = styled.p`
     text-align: center;
 `;
 
-export const RegisterLink = styled.span`
+export const RegisterLink = styled.a`
     color: #6b73ff;
     cursor: pointer;
     font-weight: bold;

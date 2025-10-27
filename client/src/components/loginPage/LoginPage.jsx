@@ -14,7 +14,7 @@ import {
 const LoginPage = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const authentication = useAuth();
+    const {login} = useAuth();
     const navigate = useNavigate();
 
     const handleLogin = async () => {
@@ -22,7 +22,7 @@ const LoginPage = () => {
             console.log("Username or password is required");
             return;
         }
-        await authentication.login(username, password);
+        await login(username, password);
         navigate('/home');
     }
 
@@ -47,7 +47,7 @@ const LoginPage = () => {
                 <LoginButton onClick={handleLogin}>Login</LoginButton>
                 <RegisterText>
                     Don’t have an account?
-                    <RegisterLink onClick={() => navigate('/register')}>Register now</RegisterLink>
+                    <RegisterLink href='/register'>Register now</RegisterLink>
                 </RegisterText>
             </LoginForm>
         </LoginWrapper>
