@@ -1,45 +1,102 @@
-import React, {useEffect} from "react";
-import {
-    HomeDiv
-} from "./HomeComponents";
+import React, {useEffect, useState} from "react";
 import {useAuth} from "../authorization/AuthProvider";
-import {Button} from "reactstrap";
 import {getAllBooks} from "../ApiService";
 import BooksTable from "../booksTable/BooksTable";
+import {
+    AdminActions,
+    Button,
+    Content,
+    Controls,
+    Header,
+    Input,
+    Label,
+    PageContainer,
+    PaginationContainer,
+    SearchBar,
+    Title,
+    UserActions,
+} from "./HomeComponents";
 
 const HomePage = () => {
-    const {logout, isAdmin} = useAuth();
-    const [books, setBooks] = React.useState([]);
-    const [elementsPerPage, setElementsPerPage] = React.useState(5);
-    const [currentPage, setCurrentPage] = React.useState(1);
-    const [titleFilter, setTitleFilter] = React.useState("");
-    const [authorFilter, setAuthorFilter] = React.useState("");
-    const {token} = useAuth();
-
-    async function getBooks() {
-        try {
-            const response = await getAllBooks(token, currentPage, elementsPerPage, titleFilter, authorFilter);
-            console.log(response);
-            setBooks(response.books);
-        } catch (error) {
-            console.log(error);
-        }
-    }
+    const {logout, isAdmin, token} = useAuth();
+    const [books, setBooks] = useState([]);
+    const [elementsPerPage, setElementsPerPage] = useState(5);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [titleFilter, setTitleFilter] = useState("");
+    const [authorFilter, setAuthorFilter] = useState("");
+    const [totalPages, setTotalPages] = useState(0);
 
     useEffect(() => {
+        const getBooks = async () => {
+            try {
+                const response = await getAllBooks(token, elementsPerPage, currentPage, titleFilter, authorFilter);
+                setBooks(response.books);
+                const total = Math.ceil(response.metadata.total_elements / response.metadata.elements_per_page);
+                setTotalPages(total);
+            } catch (error) {
+                console.error("Failed to fetch books:", error);
+            }
+        };
         getBooks();
-    }, [currentPage, elementsPerPage]);
+    }, [currentPage, elementsPerPage, token, titleFilter, authorFilter]);
 
     return (
-        <HomeDiv>
-            {isAdmin && <>
-                <Button>Add Book</Button>
-                <Button>Delete Book</Button>
-            </>
-            }
-            <BooksTable books={books} />
-        </HomeDiv>
-    );
+        <PageContainer>
+            <Header>
+                <Title>All Books</Title>
+                <UserActions>
+                    {isAdmin && (
+                        <AdminActions>
+                            <Button variant="primary" onClick={() => console.log("Add Book clicked")}>Add Book</Button>
+                            <Button variant="primary" onClick={() => console.log("Add User clicked")}>Add User</Button>
+                        </AdminActions>
+                    )}
+                    <Button onClick={logout}>Logout</Button>
+                </UserActions>
+            </Header>
 
-}
+            <Controls>
+                <SearchBar>
+                    <Input
+                        placeholder="Filter by title..."
+                        value={titleFilter}
+                        onChange={(e) => setTitleFilter(e.target.value)}
+                    />
+                    <Input
+                        placeholder="Filter by author..."
+                        value={authorFilter}
+                        onChange={(e) => setAuthorFilter(e.target.value)}
+                    />
+                </SearchBar>
+                <div>
+                    <Label htmlFor="elements-per-page">Items per page:</Label>
+                    <Input
+                        id="elements-per-page"
+                        type="number"
+                        value={elementsPerPage}
+                        min={1}
+                        onChange={(e) => setElementsPerPage(Number(e.target.value))}
+                        style={{width: '80px', textAlign: 'center'}}
+                    />
+                </div>
+            </Controls>
+
+            <Content>
+                <BooksTable books={books}/>
+            </Content>
+
+            <PaginationContainer>
+                <Button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+                    Previous
+                </Button>
+                <span>Page {currentPage} of {totalPages}</span>
+                <Button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}>
+                    Next
+                </Button>
+            </PaginationContainer>
+        </PageContainer>
+    );
+};
+
 export default HomePage;

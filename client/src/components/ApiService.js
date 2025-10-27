@@ -29,13 +29,13 @@ export async function userRegister(username, name, password) {
 }
 
 export async function getAllBooks(token, elementsPerPage, currentPage, title, author) {
-    const response = await axios.get(BASE_URL + '/book/get_available_books', {
-        data: {
-            elements_per_page: elementsPerPage,
-            page: currentPage,
-            title: title ?? null,
-            author: author ?? null,
-        },
+    const params = new URLSearchParams({
+        elements_per_page: elementsPerPage,
+        page: currentPage,
+        title: title || "",
+        author: author || "",
+    });
+    const response = await axios.get(BASE_URL + `/book/get_available_books?${params.toString()}`, {
         headers: {
             Authorization: `Bearer ${token}`
         }

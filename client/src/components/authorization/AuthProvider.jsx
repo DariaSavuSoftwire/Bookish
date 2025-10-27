@@ -10,7 +10,7 @@ const AuthProvider = ({children}) => {
     const [token, setToken] = React.useState(localStorage.getItem("bookish_token") || "");
     const [error, setError] = React.useState("");
     const [isRegisterPage, setIsRegisterPage] = React.useState(false);
-    const [isAdmin, setIsAdmin] = React.useState(false);
+    const [isAdmin, setIsAdmin] = React.useState(localStorage.getItem("user_role") === "ADMIN" || false);
     const navigate = useNavigate();
 
     const isTokenExpired = (token) => {
@@ -27,13 +27,13 @@ const AuthProvider = ({children}) => {
 
 
     useEffect(() => {
-        console.log(token);
         if (!token)
             return;
         if (isTokenExpired(token)) {
             setUser(null);
             setToken("");
             localStorage.removeItem("bookish_token");
+            localStorage.removeItem("user_role");
             return;
         }
         navigate('/home');
@@ -46,9 +46,10 @@ const AuthProvider = ({children}) => {
             setUser(username);
             setToken(response.token);
             localStorage.setItem("bookish_token", response.token);
+            localStorage.setItem("user_role", response.role);
+            setIsAdmin(response.role === "ADMIN");
             setError("");
             setIsRegisterPage(false);
-            setIsAdmin(response.role === "ADMIN");
         } catch (error) {
             console.log(error);
             setError(error.response.data.message);
@@ -62,8 +63,9 @@ const AuthProvider = ({children}) => {
             setUser(username);
             setToken(response.token);
             localStorage.setItem("bookish_token", response.token);
-            setError("")
+            localStorage.setItem("user_role", response.role);
             setIsAdmin(response.role === "ADMIN");
+            setError("")
             setIsRegisterPage(true);
         } catch (error) {
             console.log(error);
@@ -77,10 +79,12 @@ const AuthProvider = ({children}) => {
         setToken("");
         setUser(null);
         localStorage.removeItem("bookish_token");
+        localStorage.removeItem("user_role");
         navigate("/login");
     }
 
-    return <AuthContext.Provider value={{token, user, login, register, logout, isAdmin, error, isRegisterPage}}>{children}
+    return <AuthContext.Provider
+        value={{token, user, login, register, logout, isAdmin, error, isRegisterPage}}>{children}
     </AuthContext.Provider>;
 };
 
