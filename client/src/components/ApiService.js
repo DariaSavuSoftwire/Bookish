@@ -44,3 +44,23 @@ export async function getAllBooks(token, elementsPerPage, currentPage, title, au
         throw Error(response.data.message);
     }
 }
+
+export async function loanBook(token, username, ISBN, duration) {
+    const response = await axios.post(BASE_URL + '/user/loan', {
+            username: username,
+            ISBN: ISBN,
+            duration: duration
+        },
+        {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
+    );
+    if (response.status === 201) {
+        return response.data;
+
+    } else {
+        throw Error(response.data.message);
+    }
+}
