@@ -3,13 +3,15 @@ import {createContext, useContext} from "react";
 import {useNavigate} from "react-router-dom";
 import {userLogin, userRegister} from "../ApiService";
 import {jwtDecode} from "jwt-decode";
+import {AUTH_TOKEN_KEY, USER_ROLE_KEY} from "../Constants";
 
 const AuthContext = createContext();
 const AuthProvider = ({children}) => {
     const [user, setUser] = React.useState(null);
-    const [token, setToken] = React.useState(localStorage.getItem("bookish_token") || "");
+    const [token, setToken] = React.useState(localStorage.getItem(AUTH_TOKEN_KEY) || "");
     const [error, setError] = React.useState("");
     const [isRegisterPage, setIsRegisterPage] = React.useState(false);
+    const [isAdmin, setIsAdmin] = React.useState(localStorage.getItem(USER_ROLE_KEY) === "ADMIN" || false);
     const navigate = useNavigate();
 
     const isTokenExpired = (token) => {
@@ -26,13 +28,13 @@ const AuthProvider = ({children}) => {
 
 
     useEffect(() => {
-        console.log(token);
         if (!token)
             return;
         if (isTokenExpired(token)) {
             setUser(null);
             setToken("");
-            localStorage.removeItem("bookish_token");
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+            localStorage.removeItem(USER_ROLE_KEY);
             return;
         }
         navigate('/home');
@@ -41,10 +43,12 @@ const AuthProvider = ({children}) => {
 
     const login = async (username, password) => {
         try {
-            const token = await userLogin(username, password);
+            const response = await userLogin(username, password);
             setUser(username);
-            setToken(token);
-            localStorage.setItem("bookish_token", token);
+            setToken(response.token);
+            localStorage.setItem(AUTH_TOKEN_KEY, response.token);
+            localStorage.setItem(USER_ROLE_KEY, response.role);
+            setIsAdmin(response.role === "ADMIN");
             setError("");
             setIsRegisterPage(false);
         } catch (error) {
@@ -56,10 +60,12 @@ const AuthProvider = ({children}) => {
 
     const register = async (username, name, password) => {
         try {
-            const token = await userRegister(username, name, password);
+            const response = await userRegister(username, name, password);
             setUser(username);
-            setToken(token);
-            localStorage.setItem("bookish_token", token);
+            setToken(response.token);
+            localStorage.setItem(AUTH_TOKEN_KEY, response.token);
+            localStorage.setItem(USER_ROLE_KEY, response.role);
+            setIsAdmin(response.role === "ADMIN");
             setError("")
             setIsRegisterPage(true);
         } catch (error) {
@@ -73,11 +79,13 @@ const AuthProvider = ({children}) => {
     const logout = () => {
         setToken("");
         setUser(null);
-        localStorage.removeItem("bookish_token");
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        localStorage.removeItem(USER_ROLE_KEY);
         navigate("/login");
     }
 
-    return <AuthContext.Provider value={{token, user, login, register, logout, error, isRegisterPage}}>{children}
+    return <AuthContext.Provider
+        value={{token, user, login, register, logout, isAdmin, error, isRegisterPage}}>{children}
     </AuthContext.Provider>;
 };
 
