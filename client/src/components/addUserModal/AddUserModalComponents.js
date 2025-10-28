@@ -73,18 +73,6 @@ export const ButtonsWrapper=styled.div`
     gap: 1rem;
 `;
 
-export const InfoText = styled.span`
-    display: block; 
-    padding: 0.75rem;
-    border: 1px solid #ced4da;
-    border-radius: 8px;
-    font-size: 1rem;
-    background-color: #f8f9fa;
-    color: #495057;
-    width: 100%;
-    box-sizing: border-box;
-`;
-
 export const Error = styled.div`
     background-color: #ffe5e5;
     color: #b00020;

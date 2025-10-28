@@ -1,16 +1,6 @@
 import styled, {css} from "styled-components";
 import {Box} from "@mui/material";
 
-export const Title = styled.label`
-    background-color: #6b73ff;
-    color: white;
-    padding: 15px;
-    text-align: center;
-    font-weight: 600; 
-    font-size: 1.5rem;
-    border-radius: 8px;
-`;
-
 export const Button = styled.button`
     padding: 12px 16px;
     margin-top: 20px;
@@ -31,7 +21,8 @@ export const Button = styled.button`
     &:active {
         transform: translateY(0);
     }
-    ${({ variant }) => variant === 'secondary' && css`
+
+    ${({variant}) => variant === 'secondary' && css`
         background-color: #ced4da;
         color: black;
 
@@ -43,46 +34,21 @@ export const Button = styled.button`
     `}
 `;
 
-export const Input = styled.input`
-    padding: 0.75rem;
-    border: 1px solid #ced4da;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    text-align: left;
-    width: 100%; 
-    box-sizing: border-box;
-
-    &:focus {
-        outline: none;
-        border-color: #007bff;
-        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
-    }
-`;
-
 export const Label = styled.label`
     margin-right: 0.5rem;
-    font-size: 1rem;
+    font-size: 1.5rem;
     color: #495057;
-    font-weight: 500;
+    font-weight: 700;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
 `;
 
-export const ButtonsWrapper=styled.div`
+export const ButtonsWrapper = styled.div`
     display: flex;
     flex-direction: row;
     gap: 1rem;
-`;
-
-export const InfoText = styled.span`
-    display: block; 
-    padding: 0.75rem;
-    border: 1px solid #ced4da;
-    border-radius: 8px;
-    font-size: 1rem;
-    background-color: #f8f9fa;
-    color: #495057;
-    width: 100%;
-    box-sizing: border-box;
 `;
 
 export const Error = styled.div`
@@ -120,7 +86,6 @@ export const ModalBox = styled(Box)`
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-
     background-color: white;
     padding: 2rem;
 `;

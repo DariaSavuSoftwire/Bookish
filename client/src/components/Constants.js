@@ -5,3 +5,4 @@ export const EDIT_BOOK_MODAL = 'edit';
 export const DELETE_BOOK_MODAL = 'delete';
 export const ADD_BOOK_MODAL = 'add';
 export const ADD_USER_MODAL = 'add_user';
+export const ROLE_OPTIONS = [{label: "USER", value: "USER"}, {label: "ADMIN", value: "ADMIN"}]

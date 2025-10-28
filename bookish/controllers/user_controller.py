@@ -8,8 +8,9 @@ from bookish.models.user import User
 from bookish.models import db, Book, BookLoan
 from bookish.models.user_role import Role
 
+
 def user_routes(app):
-    @app.route('/user/add_user')
+    @app.route('/user/add_user', methods=['POST'])
     @jwt_required()
     def add_user():
         if not verify_admin_user(get_jwt()):
@@ -80,6 +81,12 @@ def user_routes(app):
         book = Book.query.filter_by(ISBN=ISBN).first()
         if not book:
             return jsonify({"message": "Book does not exist"}), 400
+
+        borrowed_copies = BookLoan.query.filter_by(ISBN=book.ISBN).all()
+        available_copies = book.copies_owned - len(borrowed_copies)
+
+        if available_copies < 1:
+            return jsonify({"message": "You are not authorized to perform this action"}), 403
 
         borrowed_on = datetime.datetime.now()
         due_return = borrowed_on + datetime.timedelta(days=int(duration))

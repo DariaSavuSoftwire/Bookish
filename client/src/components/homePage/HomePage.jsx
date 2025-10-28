@@ -1,6 +1,6 @@
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {useAuth} from "../authorization/AuthProvider";
-import {getAllBooks} from "../ApiService";
+import {addBook, addUser, getAllBooks} from "../ApiService";
 import BooksTable from "../booksTable/BooksTable";
 import {
     AdminActions,
@@ -15,7 +15,11 @@ import {
     SearchBar,
     Title,
     UserActions,
+    Error
 } from "./HomeComponents";
+import AddEditModal from "../addEditModal/AddEditModal";
+import {ADD_BOOK_MODAL, ADD_USER_MODAL} from "../Constants";
+import AddUserModal from "../addUserModal/AddUserModal";
 
 const HomePage = () => {
     const {logout, isAdmin, token} = useAuth();
@@ -25,30 +29,92 @@ const HomePage = () => {
     const [titleFilter, setTitleFilter] = useState("");
     const [authorFilter, setAuthorFilter] = useState("");
     const [totalPages, setTotalPages] = useState(0);
+    const [error, setError] = useState();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalType, setModalType] = useState(null);
+    const [modalError, setModalError] = useState("");
+
+
+    const getBooks = useCallback(async () => {
+        try {
+            const response = await getAllBooks(token, elementsPerPage, currentPage, titleFilter, authorFilter);
+            setBooks(response.books);
+            const total = Math.ceil(response.metadata.total_elements / response.metadata.elements_per_page);
+            setTotalPages(total);
+            setError("");
+        } catch (error) {
+            setError(error.response.data.message);
+        }
+    }, [token, elementsPerPage, currentPage, titleFilter, authorFilter]);
+
+    const handleModalClose = () => {
+        setIsModalOpen(false);
+        setModalType(null);
+        setModalError("");
+    }
+
+    const handleAddBookConfirm = async (book_id, title, authors, copies_owned) => {
+        try {
+            await addBook(token, book_id, title, authors, copies_owned);
+            handleModalClose();
+            await getBooks();
+        } catch (error) {
+            setError(error.response.data.message);
+        }
+    }
+
+    const handleAddUserConfirm = async (name, username, role, password) => {
+        try {
+            await addUser(token, name, username, role, password);
+            handleModalClose();
+            await getBooks();
+        } catch (error) {
+            setError(error.response.data.message);
+        }
+    }
 
     useEffect(() => {
-        const getBooks = async () => {
-            try {
-                const response = await getAllBooks(token, elementsPerPage, currentPage, titleFilter, authorFilter);
-                setBooks(response.books);
-                const total = Math.ceil(response.metadata.total_elements / response.metadata.elements_per_page);
-                setTotalPages(total);
-            } catch (error) {
-                console.error("Failed to fetch books:", error);
-            }
-        };
         getBooks();
-    }, [currentPage, elementsPerPage, token, titleFilter, authorFilter]);
+    }, [getBooks]);
+
 
     return (
         <PageContainer>
+            {isModalOpen && modalType === ADD_BOOK_MODAL &&
+                <AddEditModal
+                    isOpen={isModalOpen}
+                    error={modalError}
+                    onClose={handleModalClose}
+                    onConfirm={handleAddBookConfirm}
+                />
+            }
+            {isModalOpen && modalType === ADD_USER_MODAL &&
+                <AddUserModal
+                    isOpen={isModalOpen}
+                    error={modalError}
+                    onClose={handleModalClose}
+                    onConfirm={handleAddUserConfirm}
+                />
+            }
             <Header>
                 <Title>All Books</Title>
                 <UserActions>
                     {isAdmin && (
                         <AdminActions>
-                            <Button>Add Book</Button>
-                            <Button>Add User</Button>
+                            <Button
+                                onClick={() => {
+                                    setModalType(ADD_BOOK_MODAL);
+                                    setIsModalOpen(true);
+                                }}>
+                                Add Book
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    setModalType(ADD_USER_MODAL);
+                                    setIsModalOpen(true);
+                                }}>
+                                Add User
+                            </Button>
                         </AdminActions>
                     )}
                     <Button onClick={logout}>Logout</Button>
@@ -82,7 +148,7 @@ const HomePage = () => {
             </Controls>
 
             <Content>
-                <BooksTable books={books}/>
+                <BooksTable books={books} onModalActionSuccess={getBooks}/>
             </Content>
 
             <PaginationContainer>
@@ -95,6 +161,7 @@ const HomePage = () => {
                     Next
                 </Button>
             </PaginationContainer>
+            {error && <Error>{error}</Error>}
         </PageContainer>
     );
 };

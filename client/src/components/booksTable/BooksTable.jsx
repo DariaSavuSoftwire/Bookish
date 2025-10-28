@@ -2,15 +2,20 @@ import {Table, TableButton, TableWrapper, Td, Th, Tr} from "./BooksTableComponen
 import {useAuth} from "../authorization/AuthProvider";
 import {useEffect, useState} from "react";
 import LoanModal from "../loanModal/LoanModal";
-import {loanBook} from "../ApiService";
+import {deleteBook, editBook, loanBook} from "../ApiService";
+import AddEditModal from "../addEditModal/AddEditModal";
+import DeleteModal from "../deleteModal/DeleteModal";
+import {DELETE_BOOK_MODAL, EDIT_BOOK_MODAL, LOAN_MODAL} from "../Constants";
 
-const BooksTable = ({books}) => {
+const BooksTable = ({books, onModalActionSuccess}) => {
     const {isAdmin, token, username} = useAuth();
     const [displayedBooks, setDisplayedBooks] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalAction, setModalAction] = useState(false);
     const [selectedBook, setSelectedBook] = useState(null);
     const [sortedColumnStatus, setSortedColumnStatus] = useState({key: null, direction: 'ascending'});
+    const [error, setError] = useState("");
+
     const sortByKey = (key) => {
         const sortedBooks = [...books];
         const direction = sortedColumnStatus.key == null || sortedColumnStatus.key !== key
@@ -37,32 +42,63 @@ const BooksTable = ({books}) => {
         setIsModalOpen(false);
         setModalAction(null);
         setSelectedBook(null);
+        setError("");
     }
+
 
     const handleConfirmLoan = async (days) => {
         try {
             await loanBook(token, username, selectedBook.book_id, days);
-            setIsModalOpen(false);
-            setModalAction(null);
-            setSelectedBook(null);
+            onModalActionSuccess();
+            handleModalClose();
         } catch (error) {
-            console.error(error);
+            setError(error.response.data.message);
         }
+    }
 
+    const handleConfirmEdit = async (book_id, title, authors, copies_owned) => {
+        try {
+            await editBook(token, book_id, title, authors, copies_owned);
+            onModalActionSuccess();
+            handleModalClose();
+        } catch (error) {
+            setError(error.response.data.message);
+        }
+    }
+
+    const handleConfirmDelete = async (book_id) => {
+        try {
+            await deleteBook(token, book_id);
+            onModalActionSuccess();
+            handleModalClose();
+        } catch (error) {
+            setError(error.response.data.message);
+        }
     }
 
     return (
         <>
-            {isModalOpen && modalAction === "loan" &&
+            {isModalOpen && modalAction === LOAN_MODAL &&
                 <LoanModal
                     book={selectedBook}
                     onConfirm={handleConfirmLoan}
                     isOpen={isModalOpen}
+                    error={error}
                     onClose={handleModalClose}>
                 </LoanModal>}
-            {isModalOpen && modalAction === "edit" && <LoanModal book={selectedBook} isOpen={isModalOpen}></LoanModal>}
-            {isModalOpen && modalAction === "delete" &&
-                <LoanModal book={selectedBook} isOpen={isModalOpen}></LoanModal>}
+            {isModalOpen && modalAction === EDIT_BOOK_MODAL &&
+                <AddEditModal book={selectedBook}
+                              isOpen={isModalOpen}
+                              onConfirm={handleConfirmEdit}
+                              onClose={handleModalClose}
+                              error={error}>
+                </AddEditModal>}
+            {isModalOpen && modalAction === DELETE_BOOK_MODAL &&
+                <DeleteModal book={selectedBook}
+                             isOpen={isModalOpen}
+                             onConfirm={handleConfirmDelete}
+                             onClose={handleModalClose}>
+                </DeleteModal>}
             <TableWrapper>
                 <Table>
                     <thead>
@@ -90,12 +126,35 @@ const BooksTable = ({books}) => {
                             <Td>{book.return_date ?? "-"}</Td>
                             <Td>{book.user_to_return ?? "-"}</Td>
                             <Td>
-                                {isAdmin && <TableButton></TableButton>}
+                                {isAdmin &&
+                                    <>
+                                        <TableButton
+                                            onClick={() => {
+                                                setIsModalOpen(true);
+                                                setModalAction(EDIT_BOOK_MODAL);
+                                                setSelectedBook(book);
+                                            }}>
+                                            Edit
+                                        </TableButton>
+                                        <TableButton
+                                            onClick={() => {
+                                                setIsModalOpen(true);
+                                                setModalAction(DELETE_BOOK_MODAL);
+                                                setSelectedBook(book);
+                                            }}>
+                                            Delete
+                                        </TableButton>
+                                    </>
+                                }
                                 <TableButton onClick={() => {
                                     setIsModalOpen(true);
-                                    setModalAction("loan");
+                                    setModalAction(LOAN_MODAL);
                                     setSelectedBook(book);
-                                }}>Loan</TableButton>
+
+                                }} disabled={book.copies_available <= 0}
+                                >
+                                    Loan
+                                </TableButton>
                             </Td>
                         </Tr>
                     ))}

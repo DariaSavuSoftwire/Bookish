@@ -124,15 +124,15 @@ def book_routes(app):
         if not verify_admin_user(get_jwt()):
             return jsonify({"message": "You are not authorized to perform this action"}), 403
 
-        ISBN = request.json.get('ISBN')
-
+        ISBN = request.args.get('ISBN')
         if not ISBN:
             return jsonify({"message": "Invalid request"}), 400
 
         try:
             book = Book.query.filter_by(ISBN=ISBN).first()
-            book_authors = BookAuthors.query.filter_by(ISBN=ISBN).all()
-            delete_book_authors(set(book_authors), book, db)
+            book_authors = Author.query.join(BookAuthors).filter(BookAuthors.ISBN == ISBN).all()
+            author_names = [author.name for author in book_authors]
+            delete_book_authors(set(author_names), book, db)
             db.session.delete(book)
             db.session.commit()
             return jsonify({"message": "Book deleted successfully"}), 200

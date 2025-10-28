@@ -1,35 +1,25 @@
-import {Label, Input, InfoText, Button, ButtonsWrapper, Title} from "./LoanModalComponents"; // Import InfoText
+import {Label, Input, InfoText, Button, ButtonsWrapper, Title, Error, ModalBox} from "./LoanModalComponents";
 import Modal from '@mui/material/Modal';
-import Box from '@mui/material/Box';
-import {useState} from "react";
+import {useEffect, useState} from "react";
 
-const style = {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: 400,
-    bgcolor: 'background.paper',
-    boxShadow: 24,
-    p: 4,
-    borderRadius: '8px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.5rem'
-};
-
-const LoanModal = ({book, isOpen, onClose, onConfirm}) => {
+const LoanModal = ({book, isOpen, onClose, onConfirm, error}) => {
     const [days, setDays] = useState(1);
+    const [errorMessage, setErrorMessage] = useState('');
     const handleConfirmClick = () => {
         onConfirm(days);
     }
+
+    useEffect(() => {
+        setErrorMessage(error);
+    }, [error]);
+
     return (
         <Modal
             aria-labelledby="transition-modal-title"
             aria-describedby="transition-modal-description"
             open={isOpen}
         >
-            <Box sx={style}>
+            <ModalBox>
                 <Title>Borrow a book</Title>
                 <div>
                     <Label>Book title</Label>
@@ -53,7 +43,8 @@ const LoanModal = ({book, isOpen, onClose, onConfirm}) => {
                     <Button onClick={handleConfirmClick}>Confirm</Button>
                     <Button variant="secondary" onClick={onClose}>Cancel</Button>
                 </ButtonsWrapper>
-            </Box>
+                {errorMessage && <Error>{errorMessage}</Error>}
+            </ModalBox>
         </Modal>
     )
 }
