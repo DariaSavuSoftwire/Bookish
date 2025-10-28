@@ -17,7 +17,7 @@ const LoginPage = () => {
     const [name, setName] = useState("");
     const [password, setPassword] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
-    const [toRegister, setToRegister] = useState(false);
+    const [toRegister, setToRegister] = useState();
     const {login, register, error: loginError, isRegisterPage} = useAuth();
     const navigate = useNavigate();
 
@@ -35,7 +35,7 @@ const LoginPage = () => {
 
     const handleRegister = async () => {
         try {
-            await registerSchema.validate({username: username, password: password}, {abortEarly: false});
+            await registerSchema.validate({username: username, name: name, password: password}, {abortEarly: false});
             await register(username, name, password);
             navigate('/home');
         } catch (error) {

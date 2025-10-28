@@ -50,7 +50,7 @@ def user_routes(app):
             db.session.commit()
             role_claim = {"role": "USER"}
             token = create_access_token(identity=new_user.username, additional_claims=role_claim)
-            return jsonify({"message": "User created successfully", "token": token, "role": user.role.name}), 201
+            return jsonify({"message": "User created successfully", "token": token, "role": new_user.role.name}), 201
         except Exception as e:
             app.logger.error(e)
             return jsonify({"message": "Internal Server Error, please try again later"}), 500
