@@ -71,6 +71,7 @@ export const Button = styled.button`
     transition: all 0.2s ease-in-out;
     background-color: #6b73ff;
     color: white;
+
     &:hover {
         background-color: #5a63e8;
     }
@@ -89,14 +90,16 @@ export const Input = styled.input`
     transition: border-color 0.2s, box-shadow 0.2s;
     text-align: left;
     width: 20vw;
+
     &:focus {
         outline: none;
         border-color: #007bff;
         box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
     }
-    ${({ variant }) => variant === 'elements' && css`
+
+    ${({variant}) => variant === 'elements' && css`
         text-align: center;
-        width:5vw;
+        width: 5vw;
     `}
 `;
 
@@ -130,68 +133,6 @@ export const Error = styled.div`
         }
     }
 `;
-
-export const TableWrapper = styled.div`
-    width: 100%;
-    margin-top: 20px;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-`;
-
-export const Table = styled.table`
-    width: 100%;
-    border-collapse: collapse;
-    background-color: white;
-`;
-
-export const Th = styled.th`
-    background-color: #6b73ff;
-    color: white;
-    padding: 15px;
-    text-align: left;
-    font-weight: 600; 
-    font-size: 0.9rem;
-`;
-
-export const Td = styled.td`
-    padding: 15px;
-    border-bottom: 1px solid #eee;
-    color: #333;
-`;
-
-export const Tr = styled.tr`
-    &:last-of-type {
-        td {
-            border-bottom: none; 
-        }
-    }
-
-    &:hover {
-        background-color: #f7f8ff;
-    }
-`;
-export const TableButton = styled.button`
-    padding: 0.5rem 1rem;
-    margin-left: 5px;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    background-color: #6b73ff;
-    color: white;
-    &:hover {
-        background-color: #5a63e8;
-    }
-
-    &:disabled {
-        background-color: #ced4da;
-        cursor: not-allowed;
-    }
-`;
-
 export const NavTitleButton = styled.h2`
     font-size: 1.5rem;
     font-weight: 600;
@@ -213,7 +154,7 @@ export const NavTitleButton = styled.h2`
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
             color: #6b73ff;
         }
-    `} 
+    `}
     ${props => props.isActive && css`
         background-color: #6b73ff;
         color: white;

@@ -1,7 +1,9 @@
 import React, {useCallback, useEffect, useState} from "react";
 import {useAuth} from "../authorization/AuthProvider";
-import {getLoanedBooks, returnBook} from "../ApiService";
+import {addBook, addUser, getAllBooks} from "../ApiService";
+import BooksTable from "../booksTable/BooksTable";
 import {
+    AdminActions,
     Button,
     Content,
     Controls,
@@ -12,36 +14,31 @@ import {
     PaginationContainer,
     SearchBar,
     UserActions,
-    Error,
-    TableWrapper,
-    TableButton,
-    Table,
-    Td,
-    Th,
-    Tr, NavContainer, NavTitleButton
-} from "./HomeComponents";
+    Error, NavTitleButton, NavContainer
+} from "./CatalogueComponents";
+import AddEditModal from "../addEditModal/AddEditModal";
+import {ADD_BOOK_MODAL, ADD_USER_MODAL} from "../Constants";
+import AddUserModal from "../addUserModal/AddUserModal";
 import {useNavigate} from "react-router-dom";
-import ReturnDeleteModal from "../returnDeleteModal/ReturnDeleteModal";
-import {RETURN_MODAL} from "../Constants";
 
-const HomePage = () => {
-    const {logout, token} = useAuth();
+const Catalogue = () => {
+    const {logout, isAdmin, token} = useAuth();
     const navigate = useNavigate();
-    const [loanedBooks, setLoanedBooks] = useState([]);
+    const [books, setBooks] = useState([]);
     const [elementsPerPage, setElementsPerPage] = useState(5);
     const [currentPage, setCurrentPage] = useState(1);
     const [titleFilter, setTitleFilter] = useState("");
     const [authorFilter, setAuthorFilter] = useState("");
     const [totalPages, setTotalPages] = useState(0);
     const [error, setError] = useState();
-    const [selectedBook, setSelectedBook] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalType, setModalType] = useState(null);
     const [modalError, setModalError] = useState("");
 
-    const getUserBooks = useCallback(async () => {
+    const getBooks = useCallback(async () => {
         try {
-            const response = await getLoanedBooks(token, elementsPerPage, currentPage, titleFilter, authorFilter);
-            setLoanedBooks(response.books);
+            const response = await getAllBooks(token, elementsPerPage, currentPage, titleFilter, authorFilter);
+            setBooks(response.books);
             const total = Math.ceil(response.metadata.total_elements / response.metadata.elements_per_page);
             setTotalPages(total);
             setError("");
@@ -50,57 +47,93 @@ const HomePage = () => {
         }
     }, [token, elementsPerPage, currentPage, titleFilter, authorFilter]);
 
-    useEffect(() => {
-        getUserBooks();
-    }, [getUserBooks]);
-
     const handleModalClose = () => {
         setIsModalOpen(false);
+        setModalType(null);
         setModalError("");
     }
 
-    const handleReturnBookConfirm = async () => {
+    const handleAddBookConfirm = async (book_id, title, authors, copies_owned) => {
         try {
-            await returnBook(token, selectedBook.book.ISBN, selectedBook.due_return);
+            await addBook(token, book_id, title, authors, copies_owned);
             handleModalClose();
-            getUserBooks();
+            await getBooks();
         } catch (error) {
             setError(error.response.data.message);
         }
     }
 
+    const handleAddUserConfirm = async (name, username, role, password) => {
+        try {
+            await addUser(token, name, username, role, password);
+            handleModalClose();
+            await getBooks();
+        } catch (error) {
+            setError(error.response.data.message);
+        }
+    }
+
+    useEffect(() => {
+        getBooks();
+    }, [getBooks]);
+
+
     return (
         <PageContainer>
-            {isModalOpen &&
-                <ReturnDeleteModal
-                    book={selectedBook}
+            {isModalOpen && modalType === ADD_BOOK_MODAL &&
+                <AddEditModal
                     isOpen={isModalOpen}
-                    onClose={handleModalClose}
-                    onConfirm={handleReturnBookConfirm}
                     error={modalError}
-                    action={RETURN_MODAL}
-                >
-                </ReturnDeleteModal>
+                    onClose={handleModalClose}
+                    onConfirm={handleAddBookConfirm}
+                />
+            }
+            {isModalOpen && modalType === ADD_USER_MODAL &&
+                <AddUserModal
+                    isOpen={isModalOpen}
+                    error={modalError}
+                    onClose={handleModalClose}
+                    onConfirm={handleAddUserConfirm}
+                />
             }
             <Header>
                 <NavContainer>
                     <NavTitleButton
                         onClick={() => navigate('/home')}
-                        isActive={true}
+                        isActive={false}
                     >
                         Your Books
                     </NavTitleButton>
                     <NavTitleButton
                         onClick={() => navigate('/catalogue')}
-                        isActive={false}
+                        isActive={true}
                     >
                         All Books
                     </NavTitleButton>
                 </NavContainer>
                 <UserActions>
+                    {isAdmin && (
+                        <AdminActions>
+                            <Button
+                                onClick={() => {
+                                    setModalType(ADD_BOOK_MODAL);
+                                    setIsModalOpen(true);
+                                }}>
+                                Add Book
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    setModalType(ADD_USER_MODAL);
+                                    setIsModalOpen(true);
+                                }}>
+                                Add User
+                            </Button>
+                        </AdminActions>
+                    )}
                     <Button onClick={logout}>Logout</Button>
                 </UserActions>
             </Header>
+
             <Controls>
                 <SearchBar>
                     <Input
@@ -128,37 +161,9 @@ const HomePage = () => {
             </Controls>
 
             <Content>
-                <TableWrapper>
-                    <Table>
-                        <thead>
-                        <tr>
-                            <Th>Title</Th>
-                            <Th>Author(s)</Th>
-                            <Th>Return Date</Th>
-                            <Th>Actions</Th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {loanedBooks && loanedBooks.map((loanedBook, index) => (
-                            <Tr key={index}>
-                                <Td>{loanedBook.book.title}</Td>
-                                <Td>{loanedBook.book.authors.join(", ")}</Td>
-                                <Td>{loanedBook.due_return}</Td>
-                                <Td>
-                                    <TableButton onClick={() => {
-                                        setIsModalOpen(true);
-                                        setSelectedBook(loanedBook);
-                                    }}
-                                    >
-                                        Return
-                                    </TableButton>
-                                </Td>
-                            </Tr>
-                        ))}
-                        </tbody>
-                    </Table>
-                </TableWrapper>
+                <BooksTable books={books} onModalActionSuccess={getBooks}/>
             </Content>
+
             <PaginationContainer>
                 <Button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
                     Previous
@@ -174,4 +179,4 @@ const HomePage = () => {
     );
 };
 
-export default HomePage;
+export default Catalogue;

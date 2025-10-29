@@ -2,6 +2,8 @@ import os
 from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+
+from bookish.commands import register_commands
 from bookish.db_setup import db, migrate
 from bookish.controllers import register_controllers
 
@@ -18,7 +20,7 @@ def create_app():
     migrate.init_app(app, db)
 
     register_controllers(app)
-
+    register_commands(app)
     jwt.init_app(app)
     CORS(app)
 

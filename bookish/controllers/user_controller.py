@@ -1,16 +1,16 @@
 import datetime
-import logging
 
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 
 from bookish.controllers.utils import verify_admin_user
 from bookish.models.user import User
-from bookish.models import db, Book, BookLoan
+from bookish.models import db, Book, BookLoan, BookAuthors, Author
 from bookish.models.user_role import Role
 
+
 def user_routes(app):
-    @app.route('/user/add_user')
+    @app.route('/user/add_user', methods=['POST'])
     @jwt_required()
     def add_user():
         if not verify_admin_user(get_jwt()):
@@ -50,7 +50,7 @@ def user_routes(app):
             db.session.commit()
             role_claim = {"role": "USER"}
             token = create_access_token(identity=new_user.username, additional_claims=role_claim)
-            return jsonify({"message": "User created successfully", "token": token}), 201
+            return jsonify({"message": "User created successfully", "token": token, "role": new_user.role.name}), 201
         except Exception as e:
             app.logger.error(e)
             return jsonify({"message": "Internal Server Error, please try again later"}), 500
@@ -65,7 +65,7 @@ def user_routes(app):
             return jsonify({"message": "Username or password is incorrect"}), 400
 
         token = create_access_token(identity=user.username, additional_claims={"role": user.role.name})
-        return jsonify({"message": "User logged in successfully", "token": token}), 201
+        return jsonify({"message": "User logged in successfully", "token": token, "role": user.role.name}), 201
 
     @app.route('/user/loan', methods=['POST'])
     @jwt_required()
@@ -82,6 +82,12 @@ def user_routes(app):
         if not book:
             return jsonify({"message": "Book does not exist"}), 400
 
+        borrowed_copies = BookLoan.query.filter_by(ISBN=book.ISBN).all()
+        available_copies = book.copies_owned - len(borrowed_copies)
+
+        if available_copies < 1:
+            return jsonify({"message": "You are not authorized to perform this action"}), 403
+
         borrowed_on = datetime.datetime.now()
         due_return = borrowed_on + datetime.timedelta(days=int(duration))
         book_loan = BookLoan(ISBN=ISBN, username=username, borrowed_on=borrowed_on.strftime("%Y-%m-%d"),
@@ -94,9 +100,60 @@ def user_routes(app):
             app.logger.error(e)
             return jsonify({"message": "Internal Server Error, please try again later"}), 500
 
+    @app.route('/user/return_book', methods=['PUT'])
+    @jwt_required()
+    def return_book():
+        username = get_jwt_identity()
+        isbn = request.json.get('ISBN')
+        return_date = request.json.get('return_date')
+
+        if not isbn or not return_date:
+            return jsonify({"message": "Invalid request"}), 400
+        try:
+            book_loan = BookLoan.query.filter(BookLoan.username == username).filter(BookLoan.ISBN == isbn).filter(
+                BookLoan.due_return == return_date).first()
+
+            db.session.delete(book_loan)
+            db.session.commit()
+            return jsonify({"message": "Book returned successfully"}), 200
+
+        except Exception as e:
+            app.logger.error(e)
+            return jsonify({"message": "Internal Server Error, please try again later"}), 500
+
     @app.route('/user/get_loaned_books', methods=['GET'])
     @jwt_required()
     def get_loaned_books():
         username = get_jwt_identity()
-        loaned_books = BookLoan.query.filter_by(username=username).all()
-        return jsonify({"loaned_books": [loaned_book.serialize() for loaned_book in loaned_books]}), 200
+
+        author = request.args.get('author')
+        title = request.args.get('title')
+
+        page = request.args.get('page', 1, type=int)
+        elements_per_page = request.args.get('elements_per_page', 10, type=int)
+        if page < 1 or elements_per_page < 1:
+            return jsonify({"message": "Both page and number of elements per page should be greater than 0"}), 400
+
+        query = BookLoan.query
+        query = query.join(Book, BookLoan.ISBN == Book.ISBN)
+        query = query.filter(BookLoan.username == username)
+        if author:
+            query = query.join(BookAuthors, Book.ISBN == BookAuthors.ISBN).join(Author).filter(
+                Author.name.ilike(f"%{author}%"))
+
+        if title:
+            query = query.filter(Book.title.ilike(f"%{title}%"))
+
+        query = query.order_by(Book.title)
+        no_of_books = query.count()
+        loaned_books = query.paginate(page=page, per_page=elements_per_page, error_out=False).items
+
+        return jsonify({
+            "books": [book.serialize() for book in loaned_books],
+            "metadata":
+                {
+                    "page": page,
+                    "elements_per_page": elements_per_page,
+                    "total_elements": no_of_books
+                }
+        }), 200

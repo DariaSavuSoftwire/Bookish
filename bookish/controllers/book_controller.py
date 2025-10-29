@@ -124,15 +124,15 @@ def book_routes(app):
         if not verify_admin_user(get_jwt()):
             return jsonify({"message": "You are not authorized to perform this action"}), 403
 
-        ISBN = request.json.get('ISBN')
-
+        ISBN = request.args.get('ISBN')
         if not ISBN:
             return jsonify({"message": "Invalid request"}), 400
 
         try:
             book = Book.query.filter_by(ISBN=ISBN).first()
-            book_authors = BookAuthors.query.filter_by(ISBN=ISBN).all()
-            delete_book_authors(set(book_authors), book, db)
+            book_authors = Author.query.join(BookAuthors).filter(BookAuthors.ISBN == ISBN).all()
+            author_names = [author.name for author in book_authors]
+            delete_book_authors(set(author_names), book, db)
             db.session.delete(book)
             db.session.commit()
             return jsonify({"message": "Book deleted successfully"}), 200
@@ -149,7 +149,17 @@ def book_routes(app):
         if page < 1 or elements_per_page < 1:
             return jsonify({"message": "Both page and number of elements per page should be greater than 0"}), 400
 
-        books = Book.query.order_by(Book.title);
+        author = request.args.get('author')
+        title = request.args.get('title')
+        query = Book.query
+
+        if author:
+            query = query.join(BookAuthors).join(Author).filter(Author.name.ilike(f"%{author}%"))
+
+        if title:
+            query = query.filter(Book.title.ilike(f"%{title}%"))
+
+        books = query.order_by(Book.title)
         no_of_books = books.count()
         paged_books = books.paginate(page=page, per_page=elements_per_page, error_out=False)
         available_books = []
