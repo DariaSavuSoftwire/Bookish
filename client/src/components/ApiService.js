@@ -45,6 +45,25 @@ export async function getAllBooks(token, elementsPerPage, currentPage, title, au
     }
 }
 
+export async function getLoanedBooks(token, elementsPerPage, currentPage, title, author) {
+    const params = new URLSearchParams({
+        elements_per_page: elementsPerPage,
+        page: currentPage,
+        title: title || "",
+        author: author || "",
+    });
+    const response = await axios.get(BASE_URL + `/user/get_loaned_books?${params.toString()}`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+    if (response.status === 200) {
+        return response.data;
+    } else {
+        throw Error(response.data.message);
+    }
+}
+
 export async function loanBook(token, username, ISBN, duration) {
     const response = await axios.post(BASE_URL + '/user/loan', {
             username: username,
@@ -79,6 +98,25 @@ export async function editBook(token, book_id, title, authors, copies_owned) {
         }
     );
     if (response.status === 201) {
+        return response.data;
+
+    } else {
+        throw Error(response.data.message);
+    }
+}
+
+export async function returnBook(token, book_id, due_return) {
+    const response = await axios.put(BASE_URL + '/user/return_book', {
+            ISBN: book_id,
+            return_date: due_return
+        },
+        {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
+    );
+    if (response.status === 200) {
         return response.data;
 
     } else {

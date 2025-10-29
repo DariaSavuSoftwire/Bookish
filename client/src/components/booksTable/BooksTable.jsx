@@ -4,8 +4,8 @@ import {useEffect, useState} from "react";
 import LoanModal from "../loanModal/LoanModal";
 import {deleteBook, editBook, loanBook} from "../ApiService";
 import AddEditModal from "../addEditModal/AddEditModal";
-import DeleteModal from "../deleteModal/DeleteModal";
 import {DELETE_BOOK_MODAL, EDIT_BOOK_MODAL, LOAN_MODAL} from "../Constants";
+import ReturnDeleteModal from "../returnDeleteModal/ReturnDeleteModal";
 
 const BooksTable = ({books, onModalActionSuccess}) => {
     const {isAdmin, token, username} = useAuth();
@@ -94,11 +94,12 @@ const BooksTable = ({books, onModalActionSuccess}) => {
                               error={error}>
                 </AddEditModal>}
             {isModalOpen && modalAction === DELETE_BOOK_MODAL &&
-                <DeleteModal book={selectedBook}
-                             isOpen={isModalOpen}
-                             onConfirm={handleConfirmDelete}
-                             onClose={handleModalClose}>
-                </DeleteModal>}
+                <ReturnDeleteModal book={selectedBook}
+                                   isOpen={isModalOpen}
+                                   onConfirm={handleConfirmDelete}
+                                   onClose={handleModalClose}
+                                   action={DELETE_BOOK_MODAL}>
+                </ReturnDeleteModal>}
             <TableWrapper>
                 <Table>
                     <thead>

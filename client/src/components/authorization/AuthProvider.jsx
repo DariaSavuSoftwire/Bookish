@@ -1,6 +1,6 @@
 import React, {useEffect} from "react";
 import {createContext, useContext} from "react";
-import {useNavigate} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import {userLogin, userRegister} from "../ApiService";
 import {jwtDecode} from "jwt-decode";
 import {AUTH_TOKEN_KEY, USER_ROLE_KEY} from "../Constants";
@@ -13,7 +13,7 @@ const AuthProvider = ({children}) => {
     const [isRegisterPage, setIsRegisterPage] = React.useState(false);
     const [isAdmin, setIsAdmin] = React.useState(localStorage.getItem(USER_ROLE_KEY) === "ADMIN" || false);
     const navigate = useNavigate();
-
+    const location = useLocation();
     const isTokenExpired = (token) => {
         try {
             const decoded = jwtDecode(token);
@@ -35,11 +35,13 @@ const AuthProvider = ({children}) => {
             setToken("");
             localStorage.removeItem(AUTH_TOKEN_KEY);
             localStorage.removeItem(USER_ROLE_KEY);
+            navigate('/login');
             return;
         }
-        navigate('/home');
+        const initialPages = ['/', '/login', '/register'];
+        if (initialPages.includes(location.pathname)) navigate('/home');
 
-    }, [token, navigate]);
+    }, [token, navigate, location]);
 
     const login = async (username, password) => {
         try {
